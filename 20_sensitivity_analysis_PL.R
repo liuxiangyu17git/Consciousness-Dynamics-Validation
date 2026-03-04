@@ -259,9 +259,9 @@ tryCatch({
     theme_minimal() +
     geom_vline(xintercept = c(-0.5, 0, 0.5), linetype = "dashed", color = "gray50") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-  ggsave(file.path(RESULTS_DIR, "eFigure4.pdf"), p, width = 8, height = 6)
-  ggsave(file.path(RESULTS_DIR, "eFigure4.png"), p, width = 8, height = 6, dpi = 300)
-  cat("✅ Figure S4 saved: eFigure4.pdf/.png\n")
+  ggsave(file.path(RESULTS_DIR, "eFigure 2.pdf"), p, width = 8, height = 6)
+  ggsave(file.path(RESULTS_DIR, "eFigure 2.png"), p, width = 8, height = 6, dpi = 300)
+  cat("✅ Figure S4 saved: eFigure 2.pdf/.png\n")
   write.csv(nonlinear_results, file.path(RESULTS_DIR, "eTable13.csv"), row.names = FALSE)
   cat("✅ Table S9 saved: eTable13.csv\n")
 }, error = function(e) {
@@ -438,8 +438,8 @@ cat("\nAlpha Factor Effects in Youth (Table S11):\n")
 print(youth_alpha_effects)
 cat("\n四、Output Files\n")
 cat(" - eTable12.csv\n")
-cat(" - eFigure4.pdf\n")
-cat(" - eFigure4.png\n")
+cat(" - eFigure 2.pdf\n")
+cat(" - eFigure 2.png\n")
 cat(" - eTable13.csv\n")
 cat(" - eTable14.csv\n")
 cat(" - eTable15.csv\n")

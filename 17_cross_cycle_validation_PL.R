@@ -739,12 +739,12 @@ write.csv(suicide_predictors,
           row.names = FALSE)
 cat("✅ 已保存: eTable20.csv\n")
 # ============================================================================
-# 14.3 生成eFigure 2的数据文件（自杀意念分层变化）
+# 14.3 生成eTable 27的数据文件（自杀意念分层变化）
 # ============================================================================
 cat("\n【14.3 自杀意念分层变化数据】\n")
 # 检查是否有suicide_by_sev数据
 if (exists("suicide_by_sev")) {
-  # 转置为eFigure 2需要的格式
+  # 转置为eTable 27需要的格式
 suicide_sev_plot <- data.frame(
   Depression_Severity = c("None/Minimal", "Mild", "Moderate", "Moderately Severe"),
     PCycle = suicide_by_sev$PCycle,
@@ -754,9 +754,9 @@ suicide_sev_plot <- data.frame(
   cat("\n【自杀意念分层变化】\n")
   print(suicide_sev_plot)
   write.csv(suicide_sev_plot, 
-            file.path(RESULTS_DIR, "suicide_by_severity_plot.csv"), 
+            file.path(RESULTS_DIR, "eTable 27.csv"), 
             row.names = FALSE)
-  cat("✅ 已保存: suicide_by_severity_plot.csv\n")
+  cat("✅ 已保存: eTable 27.csv\n")
 } else {
   cat("⚠️ suicide_by_sev不存在，使用运行结果手动创建\n")
   suicide_sev_plot <- data.frame(
@@ -767,9 +767,9 @@ suicide_sev_plot <- data.frame(
   )
   print(suicide_sev_plot)
   write.csv(suicide_sev_plot, 
-            file.path(RESULTS_DIR, "suicide_by_severity_plot.csv"), 
+            file.path(RESULTS_DIR, "eTable 27.csv"), 
             row.names = FALSE)
-  cat("✅ 已保存: suicide_by_severity_plot.csv\n")
+  cat("✅ 已保存: eTable 27.csv\n")
 }
 # ============================================================================
 # 14.4 汇总报告
@@ -781,7 +781,7 @@ cat("\n生成的文件清单:\n")
 cat("1. eTable23.csv  - eTable 23 (总体比较)\n")
 cat("2. eTable23_gender.csv       - eTable 23 (Gender分层)\n")
 cat("3. eTable20.csv                 - eTable 20 (自杀预测)\n")
-cat("4. suicide_by_severity_plot.csv           - eFigure 2 数据源\n")
+cat("4. eTable 27.csv           - eTable 27 数据源\n")
 cat("========================================================\n")
 # ============================================================================
 # 15. 完成
