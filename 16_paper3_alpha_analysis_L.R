@@ -840,21 +840,82 @@ cat(" ✅ Figure 2 saved: Figure2.pdf/.png\n")
 cat(" ✅ alpha_pathway_long.csv saved\n")
 }
 # ============================================================================
-# 16. 可视化：Figure 4 - 中介网络图（最终优化版）
+# 16. 可视化：Figure 4 - 中介网络图（基于P周期实际数据）
 # ============================================================================
 cat("\n========================================================\n")
-cat("14. 生成Figure 4 - 中介网络图（最终优化版）\n")
+cat("16. 生成Figure 4 - 中介网络图（基于P周期实际数据）\n")
 cat("========================================================\n")
 # 加载必要的包
 library(qgraph)
+# 检查并创建结果目录
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir, recursive = TRUE)
+  cat("✅ 创建目录:", results_dir, "\n")
+}
+cat("当前工作目录:", getwd(), "\n")
+cat("文件将保存到:", file.path(results_dir, "Figure4.pdf"), "\n\n")
+# 从之前的中介分析结果中提取P周期的实际值
+if(!exists("mediation_results")) {
+  cat("⚠️ 未找到mediation_results，从文件读取...\n")
+  mediation_file <- file.path(results_dir, "eTable6_P.csv")
+  if(file.exists(mediation_file)) {
+    mediation_results <- read.csv(mediation_file)
+    cat("✅ 成功读取:", mediation_file, "\n")
+  } else {
+    stop("❌ 找不到中介分析结果文件: ", mediation_file)
+  }
+}
+# 提取三个关键路径的中介比例（代码保持不变）
+path1 <- mediation_results %>%
+  filter(Model == "BMI → α₂ → CVD" & op == ":=" & label == "prop_mediated") %>%
+  mutate(
+    mediated = round(est, 1),
+    indirect = {
+      temp <- mediation_results %>%
+        filter(Model == "BMI → α₂ → CVD" & op == ":=" & label == "indirect")
+      temp$est[1]
+    }
+  )
+path2 <- mediation_results %>%
+  filter(Model == "BMI → α₄ → CVD" & op == ":=" & label == "prop_mediated") %>%
+  mutate(
+    mediated = round(est, 1),
+    indirect = {
+      temp <- mediation_results %>%
+        filter(Model == "BMI → α₄ → CVD" & op == ":=" & label == "indirect")
+      temp$est[1]
+    }
+  )
+path3 <- mediation_results %>%
+  filter(Model == "CRP → α₂ → CVD" & op == ":=" & label == "prop_mediated") %>%
+  mutate(
+    mediated = round(est, 1),
+    indirect = {
+      temp <- mediation_results %>%
+        filter(Model == "CRP → α₂ → CVD" & op == ":=" & label == "indirect")
+      temp$est[1]
+    }
+  )
+cat("\n✅ 提取的中介比例:\n")
+cat(" BMI→α₂→CVD:", path1$mediated[1], "%\n")
+cat(" BMI→α₄→CVD:", path2$mediated[1], "%\n")
+cat(" CRP→α₂→CVD:", path3$mediated[1], "%\n\n")
 # 定义节点
 nodes <- c("BMI", "CRP", "α₂", "α₄", "CVD")
-# 定义边 - 使用深绿色
+# 定义边
 edges <- data.frame(
   from = c("BMI", "BMI", "CRP", "α₂", "α₄"),
   to = c("α₂", "α₄", "α₂", "CVD", "CVD"),
-  weight = c(0.0102, 0.00066, 0.0684, 1.0, 0.8),
+  weight = c(abs(path1$indirect[1]), abs(path2$indirect[1]), abs(path3$indirect[1]), 1.0, 0.8),
+  mediated = c(path1$mediated[1], path2$mediated[1], path3$mediated[1], NA, NA),
   color = c("#006400", "#006400", "#006400", "#006400", "#006400")
+)
+# 创建边标签
+edge_labels <- c(
+  paste0(path1$mediated[1], "%"),
+  paste0(path2$mediated[1], "%"),
+  paste0(path3$mediated[1], "%"),
+  "", ""
 )
 # 创建邻接矩阵
 adj_matrix <- matrix(0, nrow = length(nodes), ncol = length(nodes))
@@ -863,75 +924,89 @@ colnames(adj_matrix) <- nodes
 for(i in 1:nrow(edges)) {
   adj_matrix[edges$from[i], edges$to[i]] <- edges$weight[i]
 }
+# 布局和标签位置调整
+layout_matrix <- matrix(c(
+  0.15, 0.7,  # BMI
+  0.15, 0.4,  # CRP
+  0.5, 0.7,   # α₂
+  0.5, 0.4,   # α₄
+  0.85, 0.55  # CVD
+), ncol = 2, byrow = TRUE)
+edge_label_positions <- c(0.65, 0.35, 0.5, 0.5, 0.5)
 # 绘制网络图 - PDF
 pdf(file.path(results_dir, "Figure4.pdf"), 
     width = 10, height = 8,
     family = "Helvetica")
 qgraph(adj_matrix,
-       layout = "spring",
+       layout = layout_matrix,
        labels = nodes,
-       label.cex = 1.4,        # 减小节点标签（原1.6）
+       label.cex = 1.6,
        label.font = 2,
        color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
        borders = TRUE,
        border.width = 2,
-       vsize = 9,               # 减小节点大小（原11）
+       vsize = 10,
        esize = 8,
        edge.color = edges$color,
        edge.width = 2.5,
-       edge.labels = c("12.8%", "3.0%", "19.5%", "", ""),
-       edge.label.cex = 1.3,    # 稍微减小边标签
+       edge.labels = edge_labels,
+       edge.label.cex = 1.4,
        edge.label.font = 2,
-       edge.label.position = c(0.3, 0.7, 0.5, 0.5, 0.5),
-       title = "Figure 4. α₂ Mediation Network",
-       title.cex = 1.4,         # 减小标题（原1.6）
-       title.font = 2,
-       cut = 0.001,
-       minimum = 0.0005,
-       maximum = 1,
-       details = TRUE,
-       posCol = "#006400",
-       fade = FALSE,
-       # 增大底部文字的显示
-       label.scale = FALSE,
-       label.prop = 1,
-       # 调整边距，给底部更多空间
-       mar = c(6, 3, 3, 3))
-dev.off()
-cat(" ✅ Figure 4 PDF saved: Figure4.pdf\n")
-# 绘制PNG（高分辨率）
-png(file.path(results_dir, "Figure4.png"), 
-    width = 1500, height = 1200, res = 250)
-qgraph(adj_matrix,
-       layout = "spring",
-       labels = nodes,
-       label.cex = 1.4,
-       label.font = 2,
-       color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
-       borders = TRUE,
-       border.width = 2,
-       vsize = 9,
-       esize = 8,
-       edge.color = edges$color,
-       edge.width = 2.5,
-       edge.labels = c("12.8%", "3.0%", "19.5%", "", ""),
-       edge.label.cex = 1.3,
-       edge.label.font = 2,
-       edge.label.position = c(0.3, 0.7, 0.5, 0.5, 0.5),
-       title = "Figure 4. α₂ Mediation Network",
+       edge.label.position = edge_label_positions,
+       title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
+                      "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
+                      "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
+                      "CRP→α₂→CVD: ", path3$mediated[1], "%"),
        title.cex = 1.4,
-       title.font = 2,
-       cut = 0.001,
-       minimum = 0.0005,
+       cut = 0,
+       minimum = 0,
        maximum = 1,
-       details = TRUE,
+       details = FALSE,
        posCol = "#006400",
        fade = FALSE,
-       label.scale = FALSE,
-       label.prop = 1,
-       mar = c(6, 3, 3, 3))
+       mar = c(8, 5, 5, 5))
 dev.off()
-cat(" ✅ Figure 4 PNG saved: Figure4.png\n")
+# 检查文件是否保存成功
+if (file.exists(file.path(results_dir, "Figure4.pdf"))) {
+  cat("✅ 文件已保存:", file.path(results_dir, "Figure4.pdf"), "\n")
+  cat("文件大小:", file.size(file.path(results_dir, "Figure4.pdf")), "bytes\n")
+} else {
+  cat("❌ 文件未保存！尝试保存到当前目录...\n")
+  # 尝试保存到当前目录作为备选
+  pdf("Figure4.pdf", width = 10, height = 8, family = "Helvetica")
+  qgraph(adj_matrix,
+         layout = layout_matrix,
+         labels = nodes,
+         label.cex = 1.6,
+         label.font = 2,
+         color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
+         borders = TRUE,
+         border.width = 2,
+         vsize = 10,
+         esize = 8,
+         edge.color = edges$color,
+         edge.width = 2.5,
+         edge.labels = edge_labels,
+         edge.label.cex = 1.4,
+         edge.label.font = 2,
+         edge.label.position = edge_label_positions,
+         title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
+                        "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
+                        "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
+                        "CRP→α₂→CVD: ", path3$mediated[1], "%"),
+         title.cex = 1.4,
+         cut = 0,
+         minimum = 0,
+         maximum = 1,
+         details = FALSE,
+         posCol = "#006400",
+         fade = FALSE,
+         mar = c(8, 5, 5, 5))
+  dev.off()
+  if (file.exists("Figure4.pdf")) {
+    cat("✅ 已保存到当前目录: Figure4.pdf\n")
+  }
+}
 # ============================================================================
 # 17. 生成分析报告
 # ============================================================================

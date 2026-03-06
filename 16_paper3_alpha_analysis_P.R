@@ -848,6 +848,8 @@ if(file.exists(alpha_pathway_file)) {
 cat("\n========================================================\n")
 cat("16. 生成Figure 4 - 中介网络图（基于P周期实际数据）\n")
 cat("========================================================\n")
+# 加载必要的包
+library(qgraph)
 # 从之前的中介分析结果中提取P周期的实际值
 if(!exists("mediation_results")) {
   cat("⚠️ 未找到mediation_results，从文件读取...\n")
@@ -903,7 +905,7 @@ edges <- data.frame(
   mediated = c(path1$mediated[1], path2$mediated[1], path3$mediated[1], NA, NA),
   color = c("#006400", "#006400", "#006400", "#006400", "#006400")
 )
-# 创建边标签 - 只对前三条边显示百分比
+# 创建边标签
 edge_labels <- c(
   paste0(path1$mediated[1], "%"),
   paste0(path2$mediated[1], "%"),
@@ -918,75 +920,55 @@ colnames(adj_matrix) <- nodes
 for(i in 1:nrow(edges)) {
   adj_matrix[edges$from[i], edges$to[i]] <- edges$weight[i]
 }
+# ===== 关键修改：调整布局和标签位置解决重叠 =====
+# 布局微调：左右拉开距离
+layout_matrix <- matrix(c(
+  0.15, 0.7,  # BMI - 左移
+  0.15, 0.4,  # CRP - 左移
+  0.5, 0.7,   # α₂
+  0.5, 0.4,   # α₄
+  0.85, 0.55  # CVD - 右移
+), ncol = 2, byrow = TRUE)
+# 为每条边单独设置标签位置
+# 边1 (BMI→α₂): 14.4% - 位置0.65 (偏向α₂)
+# 边2 (BMI→α₄): -3.3% - 位置0.35 (偏向BMI，避开14.4%)
+# 边3 (CRP→α₂): 17.7% - 位置0.5 (中间)
+edge_label_positions <- c(0.65, 0.35, 0.5, 0.5, 0.5)
 # 绘制网络图 - PDF
 pdf(file.path(RESULTS_DIR, "Figure4_P.pdf"), 
     width = 10, height = 8,
     family = "Helvetica")
 qgraph(adj_matrix,
-       layout = "spring",
+       layout = layout_matrix,
        labels = nodes,
-       label.cex = 1.4,
+       label.cex = 1.6,
        label.font = 2,
        color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
        borders = TRUE,
        border.width = 2,
-       vsize = 9,
-       esize = 8,
-       edge.color = edges$color,
-       edge.width = 2.5,
-       edge.labels = edge_labels,  # 使用处理后的标签
-       edge.label.cex = 1.3,
-       edge.label.font = 2,
-       edge.label.position = c(0.3, 0.7, 0.5, 0.5, 0.5),
-       title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
-                      "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
-                      "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
-                      "CRP→α₂→CVD: ", path3$mediated[1], "%"),
-       title.cex = 1.2,
-       title.font = 2,
-       cut = 0.001,
-       minimum = 0.0005,
-       maximum = 1,
-       details = TRUE,
-       posCol = "#006400",
-       fade = FALSE,
-       mar = c(6, 3, 3, 3))
-dev.off()
-cat(" ✅ Figure 4 PDF saved: Figure4_P.pdf\n")
-# 绘制PNG
-png(file.path(RESULTS_DIR, "Figure4_P.png"), 
-    width = 1500, height = 1200, res = 250)
-qgraph(adj_matrix,
-       layout = "spring",
-       labels = nodes,
-       label.cex = 1.4,
-       label.font = 2,
-       color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
-       borders = TRUE,
-       border.width = 2,
-       vsize = 9,
+       vsize = 10,
        esize = 8,
        edge.color = edges$color,
        edge.width = 2.5,
        edge.labels = edge_labels,
-       edge.label.cex = 1.3,
+       edge.label.cex = 1.4,
        edge.label.font = 2,
-       edge.label.position = c(0.3, 0.7, 0.5, 0.5, 0.5),
+       edge.label.position = edge_label_positions,
        title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
                       "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
                       "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
                       "CRP→α₂→CVD: ", path3$mediated[1], "%"),
-       title.cex = 1.2,
+       title.cex = 1.4,
        title.font = 2,
-       cut = 0.001,
-       minimum = 0.0005,
+       cut = 0,
+       minimum = 0,
        maximum = 1,
-       details = TRUE,
+       details = FALSE,
        posCol = "#006400",
        fade = FALSE,
-       mar = c(6, 3, 3, 3))
+       mar = c(8, 5, 5, 5))
 dev.off()
-cat(" ✅ Figure 4 PNG saved: Figure4_P.png\n")
+cat(" ✅ Figure 4 PDF saved: Figure4_P.pdf\n")
 # ============================================================================
 # 17. 生成分析报告
 # ============================================================================

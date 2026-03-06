@@ -430,10 +430,15 @@ if(length(existing_vars_P) == 4) {
   }
 }
 # ============================================================================
-# 生成eFigure 4（两周期对比图）
+# 生成 eFigure 4（两周期对比图）- 修正版
 # ============================================================================
 if(exists("wss_L") && exists("wss_P") && 
    length(wss_L) == 6 && length(wss_P) == 6) {
+  # 获取轮廓系数具体值
+  sil_L_4 <- round(sil_width_L[4], 3)
+  sil_P_4 <- round(sil_width_P[4], 3)
+  cat("L周期 k=4 轮廓系数:", sil_L_4, "\n")
+  cat("P周期 k=4 轮廓系数:", sil_P_4, "\n")
   # 创建两面板图形，每面板两个子图
   pdf(file.path(RESULTS_DIR, "eFigure4.pdf"), width = 14, height = 10)
   par(mfrow = c(2, 2), mar = c(5, 4, 4, 2) + 0.1)
@@ -445,16 +450,17 @@ if(exists("wss_L") && exists("wss_P") &&
        cex.lab = 1, cex.axis = 0.9)
   points(4, wss_L[4], col = "red", pch = 19, cex = 1.5)
   text(4, wss_L[4], "k=4", pos = 3, col = "red", cex = 1)
-  # L周期 - 轮廓系数
+  # L周期 - 轮廓系数（添加数值标签）
   plot(2:6, sil_width_L[2:6], type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
        ylab = "Mean silhouette width",
        main = "B. Silhouette Analysis (2021-2023)", cex.main = 1.1,
        cex.lab = 1, cex.axis = 0.9,
-       ylim = c(0, max(0.5, na.rm = TRUE)))
+       ylim = c(0, max(0.5, sil_width_L, na.rm = TRUE)))
   abline(h = 0.25, lty = 2, col = "gray")
   points(4, sil_width_L[4], col = "red", pch = 19, cex = 1.5)
-  text(4, sil_width_L[4], "k=4", pos = 3, col = "red", cex = 1)
+  text(4, sil_width_L[4], paste0("k=4\n(", sil_L_4, ")"), 
+       pos = 3, col = "red", cex = 0.9)
   # P周期 - 肘部法则
   plot(1:6, wss_P, type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
@@ -463,19 +469,20 @@ if(exists("wss_L") && exists("wss_P") &&
        cex.lab = 1, cex.axis = 0.9)
   points(4, wss_P[4], col = "red", pch = 19, cex = 1.5)
   text(4, wss_P[4], "k=4", pos = 3, col = "red", cex = 1)
-  # P周期 - 轮廓系数
+  # P周期 - 轮廓系数（添加数值标签）
   plot(2:6, sil_width_P[2:6], type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
        ylab = "Mean silhouette width",
        main = "D. Silhouette Analysis (2017-2020)", cex.main = 1.1,
        cex.lab = 1, cex.axis = 0.9,
-       ylim = c(0, max(0.5, na.rm = TRUE)))
+       ylim = c(0, max(0.5, sil_width_P, na.rm = TRUE)))
   abline(h = 0.25, lty = 2, col = "gray")
   points(4, sil_width_P[4], col = "red", pch = 19, cex = 1.5)
-  text(4, sil_width_P[4], "k=4", pos = 3, col = "red", cex = 1)
+  text(4, sil_width_P[4], paste0("k=4\n(", sil_P_4, ")"), 
+       pos = 3, col = "red", cex = 0.9)
   dev.off()
-  cat("✅ 已生成 eFigure4.pdf (两周期对比)\n")
-  # 保存数据（用于补充材料）
+  cat("✅ 已生成 eFigure4.pdf (两周期对比，带数值标签)\n")
+  # 保存数据
   elbow_data <- data.frame(
     Cycle = c(rep("2021-2023", 6), rep("2017-2020", 6)),
     k = rep(1:6, 2),
@@ -484,11 +491,8 @@ if(exists("wss_L") && exists("wss_P") &&
   )
   write.csv(elbow_data, file.path(RESULTS_DIR, "eFigure4_data.csv"), row.names = FALSE)
   cat("✅ 已保存 eFigure4_data.csv\n")
-  # # 生成 eFigure 4 的PNG版本（用于补充材料）
-cat("\n--- 生成 eFigure 4 PNG版本 ---\n")
-if(exists("wss_L") && exists("wss_P") && 
-   length(wss_L) == 6 && length(wss_P) == 6) {
-  # 创建PNG文件（更高分辨率，适合出版）
+  # 生成PNG版本
+  cat("\n--- 生成 eFigure 4 PNG版本 ---\n")
   png(file.path(RESULTS_DIR, "eFigure4.png"), 
       width = 14, height = 10, units = "in", res = 300, pointsize = 12)
   par(mfrow = c(2, 2), mar = c(5, 4, 4, 2) + 0.1)
@@ -500,16 +504,17 @@ if(exists("wss_L") && exists("wss_P") &&
        cex.lab = 1, cex.axis = 0.9)
   points(4, wss_L[4], col = "red", pch = 19, cex = 1.5)
   text(4, wss_L[4], "k=4", pos = 3, col = "red", cex = 1)
-  # L周期 - 轮廓系数
+  # L周期 - 轮廓系数（添加数值标签）
   plot(2:6, sil_width_L[2:6], type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
        ylab = "Mean silhouette width",
        main = "B. Silhouette Analysis (2021-2023)", cex.main = 1.1,
        cex.lab = 1, cex.axis = 0.9,
-       ylim = c(0, max(0.5, na.rm = TRUE)))
+       ylim = c(0, max(0.5, sil_width_L, na.rm = TRUE)))
   abline(h = 0.25, lty = 2, col = "gray")
   points(4, sil_width_L[4], col = "red", pch = 19, cex = 1.5)
-  text(4, sil_width_L[4], "k=4", pos = 3, col = "red", cex = 1)
+  text(4, sil_width_L[4], paste0("k=4\n(", sil_L_4, ")"), 
+       pos = 3, col = "red", cex = 0.9)
   # P周期 - 肘部法则
   plot(1:6, wss_P, type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
@@ -518,30 +523,29 @@ if(exists("wss_L") && exists("wss_P") &&
        cex.lab = 1, cex.axis = 0.9)
   points(4, wss_P[4], col = "red", pch = 19, cex = 1.5)
   text(4, wss_P[4], "k=4", pos = 3, col = "red", cex = 1)
-  # P周期 - 轮廓系数
+  # P周期 - 轮廓系数（添加数值标签）
   plot(2:6, sil_width_P[2:6], type = "b", pch = 19, frame = FALSE,
        xlab = "Number of clusters (k)", 
        ylab = "Mean silhouette width",
        main = "D. Silhouette Analysis (2017-2020)", cex.main = 1.1,
        cex.lab = 1, cex.axis = 0.9,
-       ylim = c(0, max(0.5, na.rm = TRUE)))
+       ylim = c(0, max(0.5, sil_width_P, na.rm = TRUE)))
   abline(h = 0.25, lty = 2, col = "gray")
   points(4, sil_width_P[4], col = "red", pch = 19, cex = 1.5)
-  text(4, sil_width_P[4], "k=4", pos = 3, col = "red", cex = 1)
+  text(4, sil_width_P[4], paste0("k=4\n(", sil_P_4, ")"), 
+       pos = 3, col = "red", cex = 0.9)
   dev.off()
-  cat("✅ 已生成 eFigure4.png (300 dpi，适合出版)\n")
-} else {
-  cat("⚠️ 无法生成 eFigure4.png，缺少聚类数据\n")
-}
-  # 生成图注文本
+  cat("✅ 已生成 eFigure4.png (300 dpi，带数值标签)\n")
+  # 生成图注文本（已包含数值）
   caption_text <- c(
     "eFigure 4. Optimal Cluster Selection Across Cycles",
     "",
     "Panels A and B show results for the 2021-2023 cycle; Panels C and D show results for the 2017-2020 cycle.",
     "Left panels (A, C): Elbow method plotting total within-cluster sum of squares (WSS) against number of clusters k.",
     "The elbow occurs at k=4 in both cycles, where the rate of decrease slows substantially.",
-    "Right panels (B, D): Silhouette analysis showing mean silhouette width for k=2 to 6.",
-    "The maximum silhouette width occurs at k=4 in both cycles (0.312 in 2021-2023, 0.308 in 2017-2020).",
+    paste0("Right panels (B, D): Silhouette analysis showing mean silhouette width for k=2 to 6. ",
+           "The maximum silhouette width occurs at k=4 in both cycles (", 
+           sil_L_4, " in 2021-2023, ", sil_P_4, " in 2017-2020)."),
     "Based on these criteria, k=4 was selected for all subsequent analyses in both cycles.",
     "",
     "Data source: NHANES 2017-2020 and 2021-2023, restricted to non-pregnant adults aged ≥18 years.",

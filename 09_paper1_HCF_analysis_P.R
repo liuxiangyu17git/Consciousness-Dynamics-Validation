@@ -580,7 +580,7 @@ if(require(qgraph)) {
              negCol = "darkred",
              maximum = 1,
              cut = 0.1,
-             details = TRUE,
+             details = FALSE,
              label.scale = FALSE,
              label.prop = 1,
              fade = FALSE)
@@ -631,7 +631,7 @@ if(require(qgraph)) {
              negCol = "darkred",
              maximum = 1,
              cut = 0.1,
-             details = TRUE,
+             details = FALSE,
              label.scale = FALSE,
              label.prop = 1,
              fade = FALSE)
@@ -647,8 +647,8 @@ if(require(qgraph)) {
       Available_in_P_cycle = "Yes",
       Notes = ifelse(nodes_present == "alt_ui_l", "Removed due to 100% missing", "")
     )
-    write.csv(node_info, file.path(RESULTS_DIR, "Figure1_nodes_P.csv"), row.names = FALSE)
-    cat("\n  ✅ 节点信息已保存: Figure1_nodes_P.csv\n")
+    write.csv(node_info, file.path(RESULTS_DIR, "Figure3_nodes_P.csv"), row.names = FALSE)
+    cat("\n  ✅ 节点信息已保存: Figure3_nodes_P.csv\n")
   } else {
     cat("  错误: 可用节点不足，无法生成图1\n")
   }

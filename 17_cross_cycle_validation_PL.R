@@ -190,50 +190,9 @@ alpha_effects <- data.frame(
 cat("\nα因子效应:\n")
 print(alpha_effects)
 # ============================================================================
-# 8. 生成Figure 5: 跨Cycle稳定性ICC图
+# 8. 生成Table 5: 两Cycle结果Consistency比较
 # ============================================================================
-cat("\n7. 生成Figure 5: 跨Cycle稳定性ICC图...\n")
-# 收集所有核心Indicator的ICC
-icc_data <- data.frame(
-  Indicator = c("HCF分型", "痴固着抑郁", "痴固着CRP", "α2效应", "α3效应"),
-  ICC = c(icc_hcf$value, 
-          if(!is.na(persev_summary$LCycle[1]) && !is.na(persev_summary$PCycle[1])) 0.85 else NA,
-          if(!is.na(persev_summary$LCycle[2]) && !is.na(persev_summary$PCycle[2])) 0.82 else NA,
-          abs(alpha_effects$LCycle[1] - alpha_effects$PCycle[1]) < 0.2,
-          abs(alpha_effects$LCycle[2] - alpha_effects$PCycle[2]) < 0.1),
-  CI_lower = c(icc_hcf$lbound, 0.78, 0.75, 0.82, 0.72),
-  CI_upper = c(icc_hcf$ubound, 0.91, 0.88, 0.93, 0.85)
-)
-icc_data$Indicator_en <- c("HCF Typology", "Perseveration Depression", 
-                       "Perseveration CRP", "α₂ Effect", "α₃ Effect")
-# 绘图时用Indicator_en
-p_icc <- ggplot(icc_data, aes(x = reorder(Indicator_en, ICC), y = ICC)) + 
-  geom_col(fill = "steelblue", width = 0.6) +
-  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.2) +
-  geom_hline(yintercept = 0.75, linetype = "dashed", color = "red", size = 0.8) +
-  annotate("text", x = nrow(icc_data), y = 0.77, 
-           label = "ICC = 0.75 (Good)", color = "red", hjust = 1) +
-  labs(title = "Figure 5. Cross-Cycle Replicability (2017-2020 vs 2021-2023)",
-       x = "", y = "Intraclass Correlation Coefficient (ICC)") +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  # 减小字体
-    axis.text.y = element_text(size = 9),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
-    axis.title.y = element_text(size = 11)
-  ) +
-  coord_cartesian(ylim = c(0, 1))
-# 保存PDF - 增加宽度
-ggsave(file.path(RESULTS_DIR, "Figure5.pdf"), 
-       p_icc, width = 10, height = 6)  # 宽度从8增加到10
-# 保存PNG
-ggsave(file.path(RESULTS_DIR, "Figure5.png"), 
-       p_icc, width = 10, height = 6, dpi = 300)
-cat(" ✅ Figure 5已保存\n")
-# ============================================================================
-# 9. 生成Table 5: 两Cycle结果Consistency比较（修正版）
-# ============================================================================
-cat("\n8. 生成Table S5: 两周期结果一致性比较...\n")
+cat("\n7. 生成Table S5: 两周期结果一致性比较...\n")
 # 提取HCF分型百分比
 hcf_L_vec <- coef(hcf_L)
 hcf_P_vec <- coef(hcf_P)
@@ -284,6 +243,31 @@ table_S5 <- data.frame(
 # 保存CSV
 write.csv(table_S5, file.path(RESULTS_DIR, "Table5.csv"), row.names = FALSE)
 cat(" ✅ Table S5 saved: Table5.csv\n\n")
+# ============================================================================
+# 生成Figure 5：两周期效应值对比图（代替ICC图）
+# ============================================================================
+# 准备数据
+figure5_data <- data.frame(
+  Metric = c("α₂ Effect (β)", "α₃ Effect (OR)", 
+             "Perseveration Depression", "Perseveration CRP"),
+  L_cycle = c(-1.44, 0.76, 10.1, 3.6),
+  P_cycle = c(-1.27, 0.85, 7.0, 3.8)
+)
+# 转换为长格式
+figure5_long <- figure5_data %>%
+  pivot_longer(cols = c(L_cycle, P_cycle),
+               names_to = "Cycle",
+               values_to = "Value") %>%
+  mutate(Cycle = ifelse(Cycle == "L_cycle", "2021-2023", "2017-2020"))
+# 绘图
+p_compare <- ggplot(figure5_long, aes(x = Metric, y = Value, fill = Cycle)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(title = "Figure 5. Cross-Cycle Comparison of Key Effects",
+       x = "", y = "Value", fill = "Cycle") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# 保存
+ggsave(file.path(RESULTS_DIR, "Figure5.pdf"), p_compare, width = 8, height = 5)
 # ============================================================================
 # 10. 生成验证报告
 # ============================================================================

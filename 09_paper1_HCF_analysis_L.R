@@ -379,7 +379,7 @@ hcf_title <- hcf_names_en[hcf]
              negCol = "darkred",
              maximum = 1,
              cut = 0.1,
-             details = TRUE,
+             details = FALSE,
              label.scale = FALSE,
              label.prop = 1)
     }
@@ -417,7 +417,7 @@ hcf_title <- hcf_names_en[hcf]
              negCol = "darkred",
              maximum = 1,
              cut = 0.1,
-             details = TRUE,
+             details = FALSE,
              label.scale = FALSE,
              label.prop = 1)
     }
