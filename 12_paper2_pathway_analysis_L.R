@@ -342,9 +342,12 @@ for (i in 1:n_clusters) {
   # 6. PHQ-9总分
   phq9_mean <- svymean(~phq9_total, design_sub, na.rm = TRUE)
   cluster_values[6] <- sprintf("%.1f (%.2f)", coef(phq9_mean), SE(phq9_mean))
-  # 7. 抑郁比例
-  dep_prop <- svymean(~I(phq9_total>=10), design_sub, na.rm = TRUE)
-  cluster_values[7] <- sprintf("%.1f (%.2f)", 100 * coef(dep_prop), 100 * SE(dep_prop))
+# 7. 抑郁比例
+dep_prop <- svymean(~I(phq9_total>=10), design_sub, na.rm = TRUE)
+# 直接提取抑郁率（第二个元素）
+dep_rate <- 100 * as.numeric(coef(dep_prop))[2]
+dep_se <- 100 * as.numeric(SE(dep_prop))[2]
+cluster_values[7] <- sprintf("%.1f (%.2f)", dep_rate, dep_se)
   # 8. BMI
   bmi_mean <- svymean(~BMXBMI, design_sub, na.rm = TRUE)
   cluster_values[8] <- sprintf("%.1f (%.2f)", coef(bmi_mean), SE(bmi_mean))
@@ -359,7 +362,7 @@ for (i in 1:n_clusters) {
 # 转换为数据框
 characteristics <- as.data.frame(result_list, stringsAsFactors = FALSE)
 # 保存
-write.csv(characteristics, file.path(results_dir, "table1_cluster_demographics.csv"), row.names = FALSE)
+write.csv(characteristics, file.path(results_dir, "table1.csv"), row.names = FALSE)
 cat(" ✅ 聚类特征表已保存\n\n")
 # ============================================================================
 # 11. 四通路扩展分析
@@ -474,7 +477,7 @@ cat(sprintf("  Variance explained: %.2f%%\n", km_result$betweenss / km_result$to
 cat("\n四、Output Files\n")
 cat("  📊 Figure 1: Figure1.pdf\n")
 cat("  📊 Figure 2: figure2_cluster_heatmap.pdf\n")
-cat("  📋 Table 1: table1_cluster_demographics.csv\n")
+cat("  📋 Table 1: table1.csv\n")
 cat("  📋 Table 2: cluster_naming.csv\n")
 cat("  📋 Table 3: risk_score_by_cluster.csv\n")
 cat("  📋 Table 4: outcome_by_cluster.csv\n")

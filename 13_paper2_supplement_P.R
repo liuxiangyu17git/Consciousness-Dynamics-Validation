@@ -34,7 +34,7 @@ for (pkg in required_packages) {
   }
 }
 # ============================================================================
-# 英文标签定义（只加这一部分，不改任何逻辑）
+# 英文标签定义
 # ============================================================================
 # HCF分型英文标签
 hcf_labels <- c(
@@ -293,6 +293,119 @@ if (length(alpha_vars) > 0) {
   write.csv(alpha_pvals, file.path(RESULTS_DIR, "table_S2_alpha_pvalues_P.csv"), row.names = FALSE)
   cat(" ✅ Table S2 p-values saved\n")
 }
+# ============================================================================
+# 整合 Table 2 (P周期)：四通路特征完整表（最终版）
+# ============================================================================
+cat("\n========================================================\n")
+cat("整合 Table 2 (P周期)：四通路特征完整表\n")
+cat("========================================================\n")
+# 设置路径
+P_DATA_DIR <- "C:/NHANES_Data/2017-2020"
+RESULTS_DIR <- file.path(P_DATA_DIR, "results")
+PAPER2_DIR <- file.path(RESULTS_DIR, "paper2")
+# ============================================================================
+# 1. 读取 Part A：四通路维度得分
+# ============================================================================
+cat("\n1. 读取四通路维度得分...\n")
+cluster_file <- file.path(P_DATA_DIR, "pathway_clustering_results_P.rds")
+if(file.exists(cluster_file)) {
+  cluster_results <- readRDS(cluster_file)
+  partA <- as.data.frame(cluster_results$centers)
+  colnames(partA) <- c("Avoidance", "Perseveration", "Hyperactivation", "Exhaustion")
+  partA$Pathway <- c("Low-hyperactivation Healthy", 
+                     "Aversion-Exhaustion", 
+                     "Perseveration-dominant", 
+                     "Pure Hyperactivation")
+  partA$N <- cluster_results$size
+  cat("  ✅ Part A 读取完成\n")
+  print(partA)
+} else {
+  stop("❌ 找不到聚类结果文件")
+}
+# ============================================================================
+# 2. 读取 Part B：人口学特征
+# ============================================================================
+cat("\n2. 读取人口学特征...\n")
+partB_file <- file.path(PAPER2_DIR, "table1_P.csv")
+if(file.exists(partB_file)) {
+  partB_raw <- read.csv(partB_file, check.names = FALSE)
+  # 通路名称映射
+  pathway_map <- c(
+    "Low.hyperactivation.Healthy" = "Low-hyperactivation Healthy",
+    "Aversion.Exhaustion" = "Aversion-Exhaustion",
+    "Perseveration.dominant" = "Perseveration-dominant",
+    "Pure.Hyperactivation" = "Pure Hyperactivation"
+  )
+  partB <- data.frame(
+    Pathway = pathway_map[partB_raw[,1]],  # 第一列是通路名
+    N_B = partB_raw$N,
+    Age = partB_raw$`Age (years), Mean (SE)`,
+    Male = partB_raw$`Male, % (SE)`,
+    College = partB_raw$`College or above, % (SE)`,
+    Poverty = partB_raw$`Poverty (income<1.0), % (SE)`,
+    PHQ9_total = partB_raw$`PHQ-9 total, Mean (SE)`,
+    Depression_rate = partB_raw$`Depression (PHQ-9≥10), % (SE)`,
+    BMI = partB_raw$`BMI (kg/m²), Mean (SE)`,
+    CRP = partB_raw$`hs-CRP (mg/L), Mean (SE)`,
+    HeartRate = partB_raw$`Resting heart rate (bpm), Mean (SE)`
+  )
+  cat("  ✅ Part B 读取完成\n")
+  print(partB)
+} else {
+  stop("❌ 找不到人口学特征文件")
+}
+# ============================================================================
+# 3. 读取 Part C：α因子分布（修正版）
+# ============================================================================
+cat("\n3. 读取α因子分布...\n")
+partC_file <- file.path(PAPER2_DIR, "table_S2_alpha_by_cluster_P.csv")
+if(file.exists(partC_file)) {
+  partC <- read.csv(partC_file)
+  # ✅ 直接按顺序添加Pathway列（因为4条通路的顺序是固定的）
+  partC$Pathway <- c("Low-hyperactivation Healthy", 
+                     "Aversion-Exhaustion", 
+                     "Perseveration-dominant", 
+                     "Pure Hyperactivation")
+  cat("  ✅ Part C 读取完成\n")
+  print(partC[, c("Pathway", "alpha1", "alpha2", "alpha3", "alpha4")])
+} else {
+  stop("❌ 找不到α因子分布文件")
+}
+# ============================================================================
+# 4. 整合 Table 2
+# ============================================================================
+cat("\n4. 整合 Table 2...\n")
+# 合并三部曲
+table2_final <- partA %>%
+  left_join(partB %>% select(-N_B), by = "Pathway") %>%  # 用partA的N，不要partB的N
+  left_join(partC %>% select(Pathway, alpha1, alpha2, alpha3, alpha4), by = "Pathway")
+# 确保通路顺序正确
+pathway_order <- c("Low-hyperactivation Healthy", 
+                   "Aversion-Exhaustion", 
+                   "Perseveration-dominant", 
+                   "Pure Hyperactivation")
+table2_final$Pathway <- factor(table2_final$Pathway, levels = pathway_order)
+table2_final <- table2_final[order(table2_final$Pathway), ]
+# 维度得分保留3位小数
+table2_final$Avoidance <- round(table2_final$Avoidance, 3)
+table2_final$Perseveration <- round(table2_final$Perseveration, 3)
+table2_final$Hyperactivation <- round(table2_final$Hyperactivation, 3)
+table2_final$Exhaustion <- round(table2_final$Exhaustion, 3)
+# α因子保留3位小数
+table2_final$alpha1 <- round(table2_final$alpha1, 3)
+table2_final$alpha2 <- round(table2_final$alpha2, 3)
+table2_final$alpha3 <- round(table2_final$alpha3, 3)
+table2_final$alpha4 <- round(table2_final$alpha4, 3)
+# ============================================================================
+# 5. 保存
+# ============================================================================
+output_file <- file.path(PAPER2_DIR, "Table2_P_complete.csv")
+write.csv(table2_final, output_file, row.names = FALSE)
+cat("\n✅ Table 2 (P周期) 整合完成！\n")
+cat("   文件保存至:", output_file, "\n")
+cat("   包含", nrow(table2_final), "行,", ncol(table2_final), "列\n\n")
+cat("Table 2 预览（4行）:\n")
+print(table2_final)
 # ============================================================================
 # 7. 补充分析3：四通路预测硬结局 (Table S3)
 # ============================================================================

@@ -293,6 +293,93 @@ if (length(alpha_vars) > 0) {
   cat(" ✅ Table S2 p-values saved\n")
 }
 # ============================================================================
+# 整合 table2 (L周期)：四通路特征完整表（纯自动版）
+# ============================================================================
+cat("\n========================================================\n")
+cat("整合 table2 (L周期)：四通路特征完整表\n")
+cat("========================================================\n")
+# 设置路径
+L_DATA_DIR <- "C:/NHANES_Data/CLEAN"
+RESULTS_DIR <- file.path(L_DATA_DIR, "results")
+PAPER2_DIR <- file.path(RESULTS_DIR, "paper2")
+# ============================================================================
+# 1. 读取 Part A：四通路维度得分
+# ============================================================================
+cat("\n1. 读取四通路维度得分...\n")
+cluster_file <- file.path(L_DATA_DIR, "pathway_clustering_results.rds")
+if(!file.exists(cluster_file)) stop("❌ 找不到聚类结果文件")
+cluster_results <- readRDS(cluster_file)
+partA <- as.data.frame(cluster_results$centers)
+colnames(partA) <- c("Avoidance", "Perseveration", "Hyperactivation", "Exhaustion")
+partA$Pathway <- c("Low-hyperactivation Healthy", "Aversion-Exhaustion", 
+                   "Perseveration-dominant", "Pure Hyperactivation")
+partA$N <- cluster_results$size
+cat("  ✅ Part A 读取完成\n")
+print(partA)
+# ============================================================================
+# 2. 读取 Part B：人口学特征
+# ============================================================================
+cat("\n2. 读取人口学特征...\n")
+partB_file <- file.path(PAPER2_DIR, "table1.csv")
+if(!file.exists(partB_file)) stop("❌ 找不到 table1.csv")
+partB_raw <- read.csv(partB_file, check.names = FALSE)
+partB <- data.frame(
+  Pathway = c("Low-hyperactivation Healthy", "Aversion-Exhaustion", 
+              "Perseveration-dominant", "Pure Hyperactivation"),
+  N_B = as.numeric(partB_raw[1, 2:5]),
+  Age = as.character(partB_raw[2, 2:5]),
+  Male = as.character(partB_raw[3, 2:5]),
+  College = as.character(partB_raw[4, 2:5]),
+  Poverty = as.character(partB_raw[5, 2:5]),
+  PHQ9_total = as.character(partB_raw[6, 2:5]),
+  Depression_rate = as.character(partB_raw[7, 2:5]),
+  BMI = as.character(partB_raw[8, 2:5]),
+  CRP = as.character(partB_raw[9, 2:5]),
+  HeartRate = as.character(partB_raw[10, 2:5])
+)
+cat("  ✅ Part B 读取完成\n")
+print(partB)
+# ============================================================================
+# 3. 读取 Part C：α因子分布
+# ============================================================================
+cat("\n3. 读取α因子分布...\n")
+partC_file <- file.path(PAPER2_DIR, "table_S2_alpha_by_cluster.csv")
+if(!file.exists(partC_file)) stop("❌ 找不到α因子分布文件")
+partC <- read.csv(partC_file)
+partC$Pathway <- c("Low-hyperactivation Healthy", "Aversion-Exhaustion", 
+                   "Perseveration-dominant", "Pure Hyperactivation")
+# 确保列名正确
+if(ncol(partC) >= 5) {
+  colnames(partC)[2:5] <- c("alpha1", "alpha2", "alpha3", "alpha4")
+}
+cat("  ✅ Part C 读取完成\n")
+print(partC[, c("Pathway", "alpha1", "alpha2", "alpha3", "alpha4")])
+# ============================================================================
+# 4. 整合 table2
+# ============================================================================
+cat("\n4. 整合 table2...\n")
+table2_final <- partA %>%
+  left_join(partB %>% select(-N_B), by = "Pathway") %>%
+  left_join(partC %>% select(Pathway, alpha1, alpha2, alpha3, alpha4), by = "Pathway")
+# 排序
+pathway_order <- c("Low-hyperactivation Healthy", "Aversion-Exhaustion", 
+                   "Perseveration-dominant", "Pure Hyperactivation")
+table2_final$Pathway <- factor(table2_final$Pathway, levels = pathway_order)
+table2_final <- table2_final[order(table2_final$Pathway), ]
+# 数值四舍五入
+num_cols <- c("Avoidance", "Perseveration", "Hyperactivation", "Exhaustion",
+              "alpha1", "alpha2", "alpha3", "alpha4")
+table2_final[num_cols] <- lapply(table2_final[num_cols], function(x) round(as.numeric(x), 3))
+# ============================================================================
+# 5. 保存
+# ============================================================================
+output_file <- file.path(PAPER2_DIR, "Table2_L_complete.csv")
+write.csv(table2_final, output_file, row.names = FALSE)
+cat("\n✅ table2 (L周期) 整合完成！\n")
+cat("   文件保存至:", output_file, "\n")
+cat("   包含", nrow(table2_final), "行,", ncol(table2_final), "列\n\n")
+print(table2_final)
+# ============================================================================
 # 7. 补充分析3：四通路预测硬结局 (Table S3)
 # ============================================================================
 cat("\n========================================================\n")

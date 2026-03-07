@@ -1469,7 +1469,7 @@ if(length(alpha1_p) == 0) alpha1_p <- "0.174"
 # 从nnt_comparison中提取正确的NNT值
 if(exists("nnt_comparison")) {
   nnt_full <- nnt_comparison$NNT[nnt_comparison$Sample == "Full population" & 
-                                  nnt_comparison$Period == "Before PSM"]
+                                  nnt_comparison$Period == "After PSM"]
   if(length(nnt_full) == 0) nnt_full <- 21
   nnt_persev <- nnt_comparison$NNT[nnt_comparison$Sample == "Perseveration population" & 
                                     nnt_comparison$Period == "After PSM"]
