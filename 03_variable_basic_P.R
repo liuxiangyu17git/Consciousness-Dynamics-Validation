@@ -546,19 +546,6 @@ if("SLD012" %in% names(data)) {
   cat(sprintf(" ✅ 睡眠变量: sleep_adequate (有效样本: %d)\n", n_sleep))
 }
 # ============================================================================
-# 10. healthbehavior_vars_P.rds（健康行为达标变量）- 修正版
-# ============================================================================
-cat("\n4.6 构建healthbehavior_vars_P.rds...\n")
-health_data <- data.frame(SEQN = data$SEQN)
-# 睡眠达标
-if("SLD012" %in% names(data)) {
-  health_data$sleep_adequate <- ifelse(
-    !is.na(data$SLD012) & data$SLD012 >= 7 & data$SLD012 <= 9, 1, 0
-  )
-  n_sleep <- sum(!is.na(health_data$sleep_adequate))
-  cat(sprintf(" ✅ 睡眠变量: sleep_adequate (有效样本: %d)\n", n_sleep))
-}
-# ============================================================================
 # 体力活动变量构建（P周期）- 修正达标标准
 # ============================================================================
 cat("\n 🔧 构建体力活动变量（P周期）...\n")

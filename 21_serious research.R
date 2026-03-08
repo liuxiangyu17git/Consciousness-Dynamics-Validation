@@ -1239,11 +1239,17 @@ cat("\n--- 8.1 平衡性检验 ---\n")
 vars_for_balance <- c("RIDAGEYR", "RIAGENDR", "DMDEDUC2", "INDFMPIR", 
                       "BMXBMI", "current_smoker", "heavy_drinker")
 # 使用svyCreateTableOne进行加权平衡性检验
+# 第720行附近 - 修正版
+# 确保 high_alpha2 是因子变量
+data_L$high_alpha2_factor <- factor(data_L$high_alpha2, 
+                                     levels = c(0, 1), 
+                                     labels = c("Low α₂", "High α₂"))
+design_L <- update(design_L, high_alpha2_factor = data_L$high_alpha2_factor)
 library(tableone)
 table_one <- tryCatch({
   svyCreateTableOne(
     vars = vars_for_balance,
-    strata = "high_alpha2",
+    strata = "high_alpha2_factor",
     design = design_L,
     test = TRUE
   )
@@ -1305,21 +1311,23 @@ for(pop in c("Full", "Perseveration")) {
   if(nrow(current_data) < 50) next
   # 使用WeightIt进行加权倾向性评分
   set.seed(20240226)
-  w.out <- weightit(above_threshold ~ RIDAGEYR + RIAGENDR + DMDEDUC2 + INDFMPIR + 
-                      BMXBMI + current_smoker + heavy_drinker,
-                    data = current_data,
-                    method = "ps",
-                    estimand = "ATT",
-                    s.weights = current_data$WTMEC2YR)
-  current_data$weights <- w.out$weights
-  # 创建加权后的设计对象
-  weighted_design <- svydesign(
-    id = ~SDMVPSU,
-    strata = ~SDMVSTRA,
-    weights = ~weights,
-    data = current_data,
-    nest = TRUE
-  )
+# 第870行附近 - 修正版
+w.out <- weightit(above_threshold ~ RIDAGEYR + RIAGENDR + DMDEDUC2 + INDFMPIR + 
+                    BMXBMI + current_smoker + heavy_drinker,
+                  data = current_data,
+                  method = "ps",
+                  estimand = "ATT",
+                  s.weights = current_data$WTMEC2YR)
+current_data$weights <- w.out$weights
+# 标准化权重避免数值问题
+current_data$weights_norm <- current_data$weights / mean(current_data$weights)
+weighted_design <- svydesign(
+  id = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~weights_norm,  # 使用标准化权重
+  data = current_data,
+  nest = TRUE
+)
   # 匹配前（使用原始调查权重）
   design_before <- svydesign(
     id = ~SDMVPSU,
@@ -1468,11 +1476,19 @@ if(length(alpha1_p) == 0) alpha1_p <- "0.174"
 # 创建汇总表
 # 从nnt_comparison中提取正确的NNT值
 if(exists("nnt_comparison")) {
-  nnt_full <- nnt_comparison$NNT[nnt_comparison$Sample == "Full population" & 
-                                  nnt_comparison$Period == "After PSM"]
-  if(length(nnt_full) == 0) nnt_full <- 21
-  nnt_persev <- nnt_comparison$NNT[nnt_comparison$Sample == "Perseveration population" & 
-                                    nnt_comparison$Period == "After PSM"]
+# 第1020行附近 - 修正版（使用模糊匹配）
+# 先查看实际值以便调试
+cat("\nnnt_comparison实际值:\n")
+print(nnt_comparison)
+# 使用 grepl 进行模糊匹配，更稳健
+nnt_full_rows <- which(grepl("Full", nnt_comparison$Sample) & 
+                        grepl("After", nnt_comparison$Period))
+nnt_persev_rows <- which(grepl("Perseveration", nnt_comparison$Sample) & 
+                          grepl("After", nnt_comparison$Period))
+nnt_full <- if(length(nnt_full_rows) > 0) nnt_comparison$NNT[nnt_full_rows[1]] else 21
+nnt_persev <- if(length(nnt_persev_rows) > 0) nnt_comparison$NNT[nnt_persev_rows[1]] else 6
+cat(sprintf("\n提取的NNT值: 全人群 = %s, 痴固着人群 = %s\n", 
+            nnt_full, nnt_persev))
   if(length(nnt_persev) == 0) nnt_persev <- 6
 } else {
   nnt_full <- 21

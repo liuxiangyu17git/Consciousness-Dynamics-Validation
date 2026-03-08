@@ -203,23 +203,49 @@ for (i in seq_along(alpha_vars)) {
 write.csv(triple_results, file.path(results_dir, "deep6_triple_interaction.csv"), row.names = FALSE)
 cat("\n✅ 已保存: deep6_triple_interaction.csv\n")
 # ============================================================================
-# 7. 修正版分析2：通路特异性药物使用
+# 7. 分析2：通路特异性药物使用（仅供内部使用，论文未采用）
 # ============================================================================
 cat("\n========================================================\n")
 cat("分析2：通路特异性药物使用\n")
 cat("========================================================\n")
-if (!"antidepressant" %in% names(data_raw)) {
-  data_raw$antidepressant <- as.numeric(data_raw$phq9_total >= 10 & !is.na(data_raw$phq9_total))
-  cat(" ✓ 创建变量: antidepressant\n")
+cat("⚠️ 注意：本分析结果未被论文采用，仅用于内部探索\n\n")
+# ============================================================================
+# 用药相关变量创建（保持代码可运行，同时增加透明度）
+# ============================================================================
+# 1. 抑郁可能（不是抗抑郁药）
+if (!"probable_depression" %in% names(data_raw)) {
+  data_raw$probable_depression <- as.numeric(
+    data_raw$phq9_total >= 10 & !is.na(data_raw$phq9_total)
+  )
+  cat(" ✓ 创建变量: probable_depression (PHQ-9≥10的抑郁可能)\n")
 }
-if (!"antihypertensive_med" %in% names(data_raw) && "BPQ050A" %in% names(data_raw)) {
-  data_raw$antihypertensive_med <- as.numeric(data_raw$BPQ050A == 1)
-  cat(" ✓ 创建变量: antihypertensive_med\n")
+# 保持旧变量名兼容性（仅供内部使用）
+data_raw$antidepressant <- data_raw$probable_depression
+# 2. 降压药（这是问卷中实际问的用药）
+if (!"antihypertensive_med" %in% names(data_raw)) {
+  # 尝试不同的可能变量名
+  if ("BPQ020" %in% names(data_raw)) {
+    data_raw$antihypertensive_med <- case_when(
+      data_raw$BPQ020 == 1 ~ 1,
+      data_raw$BPQ020 == 2 ~ 0,
+      TRUE ~ NA_real_
+    )
+    cat(" ✓ 创建变量: antihypertensive_med (来自BPQ020，自我报告降压药)\n")
+  } else if ("BPQ050A" %in% names(data_raw)) {
+    data_raw$antihypertensive_med <- as.numeric(data_raw$BPQ050A == 1)
+    cat(" ✓ 创建变量: antihypertensive_med (来自BPQ050A，自我报告降压药)\n")
+  }
 }
-if (!"antidiabetic_med" %in% names(data_raw) && "DIQ010" %in% names(data_raw)) {
-  data_raw$antidiabetic_med <- as.numeric(data_raw$DIQ010 == 1)
-  cat(" ✓ 创建变量: antidiabetic_med\n")
+# 3. 自我报告糖尿病（不是降糖药）
+if (!"self_reported_diabetes" %in% names(data_raw) && "DIQ010" %in% names(data_raw)) {
+  data_raw$self_reported_diabetes <- as.numeric(data_raw$DIQ010 == 1)
+  cat(" ✓ 创建变量: self_reported_diabetes (自我报告糖尿病诊断)\n")
 }
+# 保持旧变量名兼容性
+data_raw$antidiabetic_med <- data_raw$self_reported_diabetes
+# ============================================================================
+# 定义变量列表（用于后续分析）
+# ============================================================================
 medication_vars <- c(
   "antidepressant" = "抗抑郁药",
   "antihypertensive_med" = "降压药",
@@ -230,13 +256,23 @@ if (length(med_vars) >= 2) {
   data_raw$polypharmacy <- as.numeric(rowSums(data_raw[, med_vars], na.rm = TRUE) >= 2)
   medication_vars <- c(medication_vars, "polypharmacy" = "多重用药")
   cat(" ✓ 创建变量: polypharmacy\n")
+  cat("   ⚠️ 注意：基于 probable_depression 和 self_reported_diabetes，非实际用药\n")
 }
 medication_vars <- medication_vars[names(medication_vars) %in% names(data_raw)]
+cat("\n📋 可用变量:\n")
+for (nm in names(medication_vars)) {
+  cat(sprintf(" - %s: %s\n", nm, medication_vars[nm]))
+}
+cat("\n")
+# ============================================================================
+# 执行分析（保持原有分析逻辑不变）
+# ============================================================================
 if (length(medication_vars) > 0) {
   medication_results <- data.frame()
   for (med in names(medication_vars)) {
     med_name <- medication_vars[med]
     cat("\n【", med_name, "】\n")
+    # 每次重新创建设计对象，确保使用最新的数据
     design_med <- svydesign(
       id = ~SDMVPSU,
       strata = ~SDMVSTRA,
@@ -244,46 +280,70 @@ if (length(medication_vars) > 0) {
       nest = TRUE,
       data = data_raw
     )
-    med_by_path <- svyby(as.formula(paste0("~", med)), ~pathway_cluster,
-                         design_med, svymean, na.rm = TRUE)
-    med_df <- data.frame(
-      药物 = med_name,
-      通路 = as.character(med_by_path$pathway_cluster),
-      使用率 = round(as.numeric(med_by_path[[med]]) * 100, 1),
-      stringsAsFactors = FALSE
-    )
-    se_col <- paste0("se.", med)
-    if (se_col %in% names(med_by_path)) {
-      med_df$SE <- round(as.numeric(med_by_path[[se_col]]) * 100, 2)
-    } else {
-      med_df$SE <- NA
-    }
-    cat(" 各通路使用率:\n")
-    print(med_df[, c("通路", "使用率")])
-    formula_test <- as.formula(paste0(med, " ~ pathway_cluster"))
-    model_med <- tryCatch({
-      svyglm(formula_test, design = design_med, family = quasibinomial())
+    # 计算各通路的使用率
+    med_by_path <- tryCatch({
+      svyby(as.formula(paste0("~", med)), ~pathway_cluster,
+            design_med, svymean, na.rm = TRUE)
     }, error = function(e) {
-      cat(" 模型拟合失败:", e$message, "\n")
+      cat(" svyby失败:", e$message, "\n")
       return(NULL)
     })
-    if (!is.null(model_med)) {
-      med_test <- regTermTest(model_med, ~pathway_cluster, method = "Wald")
-      cat(" 通路间差异: F =", round(med_test$Ftest, 3),
-          ", p =", format.pval(med_test$p, digits = 3), "\n")
-      med_df$检验F <- rep(med_test$Ftest, nrow(med_df))
-      med_df$检验p <- rep(med_test$p, nrow(med_df))
-    } else {
-      med_df$检验F <- rep(NA, nrow(med_df))
-      med_df$检验p <- rep(NA, nrow(med_df))
+    if (!is.null(med_by_path)) {
+      med_df <- data.frame(
+        药物 = med_name,
+        通路 = as.character(med_by_path$pathway_cluster),
+        使用率 = round(as.numeric(med_by_path[[med]]) * 100, 1),
+        stringsAsFactors = FALSE
+      )
+      se_col <- paste0("se.", med)
+      if (se_col %in% names(med_by_path)) {
+        med_df$SE <- round(as.numeric(med_by_path[[se_col]]) * 100, 2)
+      } else {
+        med_df$SE <- NA
+      }
+      cat(" 各通路使用率:\n")
+      print(med_df[, c("通路", "使用率")])
+      # 通路间差异检验
+      formula_test <- as.formula(paste0(med, " ~ pathway_cluster"))
+      model_med <- tryCatch({
+        svyglm(formula_test, design = design_med, family = quasibinomial())
+      }, error = function(e) {
+        cat(" 模型拟合失败:", e$message, "\n")
+        return(NULL)
+      })
+      if (!is.null(model_med)) {
+        med_test <- regTermTest(model_med, ~pathway_cluster, method = "Wald")
+        cat(" 通路间差异: F =", round(med_test$Ftest, 3),
+            ", p =", format.pval(med_test$p, digits = 3), "\n")
+        med_df$检验F <- rep(med_test$Ftest, nrow(med_df))
+        med_df$检验p <- rep(med_test$p, nrow(med_df))
+      } else {
+        med_df$检验F <- rep(NA, nrow(med_df))
+        med_df$检验p <- rep(NA, nrow(med_df))
+      }
+      medication_results <- rbind(medication_results, med_df)
     }
-    medication_results <- rbind(medication_results, med_df)
   }
-  write.csv(medication_results, file.path(results_dir, "deep7_medication_by_pathway.csv"), row.names = FALSE)
-  cat("\n✅ 已保存: deep7_medication_by_pathway.csv\n")
-  cat("\n【药物使用分析结果预览】\n")
-  print(medication_results)
+  # 保存结果
+  if (nrow(medication_results) > 0) {
+    write.csv(medication_results, 
+              file.path(results_dir, "deep7_medication_by_pathway.csv"), 
+              row.names = FALSE)
+    cat("\n✅ 已保存: deep7_medication_by_pathway.csv\n")
+    cat("\n【药物使用分析结果预览】\n")
+    print(head(medication_results, 8))
+  }
 }
+# ============================================================================
+# 添加诚信说明
+# ============================================================================
+cat("\n" , paste(rep("=", 50), collapse = ""), "\n")
+cat("【诚信说明】\n")
+cat(" - 'antidepressant' 实际是 PHQ-9≥10 的抑郁可能，非实际用药\n")
+cat(" - 'antidiabetic_med' 实际是自我报告的糖尿病诊断，非实际用药\n")
+cat(" - 仅 'antihypertensive_med' 基于自我报告的降压药使用\n")
+cat(" - 本分析结果未被论文采用，仅用于内部探索\n")
+cat(paste(rep("=", 50), collapse = ""), "\n\n")
 # ============================================================================
 # 8. 修正版分析3：通路特异性炎症轨迹
 # ============================================================================

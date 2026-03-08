@@ -299,15 +299,13 @@ if (length(alpha_vars) > 0) {
 cat("\n========================================================\n")
 cat("整合 Table 2 (P周期)：四通路特征完整表\n")
 cat("========================================================\n")
-# 设置路径
-P_DATA_DIR <- "C:/NHANES_Data/2017-2020"
-RESULTS_DIR <- file.path(P_DATA_DIR, "results")
-PAPER2_DIR <- file.path(RESULTS_DIR, "paper2")
+# 使用已有的路径
+PAPER2_DIR <- RESULTS_DIR  # RESULTS_DIR 已经是 paper2 路径
 # ============================================================================
 # 1. 读取 Part A：四通路维度得分
 # ============================================================================
 cat("\n1. 读取四通路维度得分...\n")
-cluster_file <- file.path(P_DATA_DIR, "pathway_clustering_results_P.rds")
+cluster_file <- file.path(CLEAN_DATA_DIR, "pathway_clustering_results_P.rds")
 if(file.exists(cluster_file)) {
   cluster_results <- readRDS(cluster_file)
   partA <- as.data.frame(cluster_results$centers)
@@ -609,34 +607,53 @@ if ("risk_progression_score" %in% names(high_risk_data) &&
   }
 }
 # ============================================================================
-# 10. 补充分析6：通路×HCF解读 (Table S6)
+# 补充分析6：通路×HCF解读 (Table S6) - 强制paper2路径版
 # ============================================================================
 cat("\n========================================================\n")
 cat("补充分析6：通路×HCF解读\n")
 cat("========================================================\n")
-if (file.exists(file.path(RESULTS_DIR, "table_S1_cross_tab_percent_P.csv")) &&
-    file.exists(file.path(RESULTS_DIR, "table_S2_alpha_by_cluster_P.csv"))) {
-  cross_data <- read.csv(file.path(RESULTS_DIR, "table_S1_cross_tab_percent_P.csv"))
-  alpha_data <- read.csv(file.path(RESULTS_DIR, "table_S2_alpha_by_cluster_P.csv"))
+# 强制指定 paper2 路径
+paper2_path <- file.path(CLEAN_DATA_DIR, "results", "paper2")
+cross_file <- file.path(paper2_path, "table_S1_cross_tab_percent_P.csv")
+alpha_file <- file.path(paper2_path, "table_S2_alpha_by_cluster_P.csv")
+if (file.exists(cross_file) && file.exists(alpha_file)) {
+  # 读取数据
+  cross_data <- read.csv(cross_file)
+  alpha_data <- read.csv(alpha_file)
+  # 查找心理型和混合型列
+  psychological_col <- grep("Psychological", names(cross_data), value = TRUE)[1]
+  mixed_col <- grep("Mixed", names(cross_data), value = TRUE)[1]
+  if(is.na(psychological_col)) psychological_col <- names(cross_data)[4]
+  if(is.na(mixed_col)) mixed_col <- names(cross_data)[5]
+  # 构建通路解读表
   interpretation <- data.frame(
-    Pathway_Type = c("Low-hyperactivation", "Aversion-Exhaustion", "Perseveration", "Hyperactivation"),
-    Psychological_Pct = c(38.0, 28.3, 32.5, 22.5),
-    Mixed_Pct = c(62.0, 71.7, 67.5, 77.5),
-    Primary_Distribution = c("Mainly mixed", "Predominantly mixed", 
-                             "Mainly mixed", "Predominantly mixed"),
-    Characteristics = c("Low avoidance, low perseveration, low hyperactivation, low exhaustion",
-                        "High avoidance, high exhaustion",
-                        "High perseveration, high avoidance, high exhaustion",
-                        "High hyperactivation")
+    Pathway_Type = c("Low-hyperactivation", "Aversion-Exhaustion", 
+                     "Perseveration", "Hyperactivation"),
+    Psychological_Pct = round(cross_data[[psychological_col]], 1),
+    Mixed_Pct = round(cross_data[[mixed_col]], 1),
+    Primary_Distribution = case_when(
+      cross_data[[mixed_col]] > 50 ~ "Predominantly mixed",
+      cross_data[[psychological_col]] > 50 ~ "Predominantly psychological",
+      TRUE ~ "Mixed distribution"
+    ),
+    Characteristics = c(
+      "Low avoidance, low perseveration, low hyperactivation, low exhaustion",
+      "High avoidance, high exhaustion",
+      "High perseveration, high avoidance, high exhaustion",
+      "High hyperactivation"
+    ),
+    stringsAsFactors = FALSE
   )
-  if (exists("alpha_data")) {
-    interpretation$Alpha1_Mean <- round(alpha_data$alpha1, 3)
-    interpretation$Alpha2_Mean <- round(alpha_data$alpha2, 3)
-    interpretation$Alpha3_Mean <- round(alpha_data$alpha3, 3)
-    interpretation$Alpha4_Mean <- round(alpha_data$alpha4, 3)
-  }
-  write.csv(interpretation, file.path(RESULTS_DIR, "table_S6_pathway_interpretation_P.csv"), row.names = FALSE)
-  cat(" ✅ Table S6 saved: table_S6_pathway_interpretation_P.csv\n")
+  # 添加α因子均值
+  interpretation$Alpha1_Mean <- round(alpha_data$alpha1, 3)
+  interpretation$Alpha2_Mean <- round(alpha_data$alpha2, 3)
+  interpretation$Alpha3_Mean <- round(alpha_data$alpha3, 3)
+  interpretation$Alpha4_Mean <- round(alpha_data$alpha4, 3)
+  # 保存到 paper2 子目录
+  write.csv(interpretation, 
+            file.path(paper2_path, "table_S6_pathway_interpretation_P.csv"), 
+            row.names = FALSE)
+  cat(" ✅ Table S6 saved:", file.path(paper2_path, "table_S6_pathway_interpretation_P.csv"), "\n")
   print(interpretation)
 }
 # ============================================================================

@@ -576,36 +576,66 @@ if ("risk_progression_score" %in% names(high_risk_data) &&
   }
 }
 # ============================================================================
-# 10. 补充分析6：通路×HCF解读 (Table S6)
+# 生成 Table S6：通路解读表（基于实际数据，无硬编码）
 # ============================================================================
 cat("\n========================================================\n")
-cat("补充分析6：通路×HCF解读\n")
+cat("生成 Table S6：通路解读表（基于实际数据）\n")
 cat("========================================================\n")
-if (file.exists(file.path(results_dir, "table_S1_cross_tab_percent.csv")) &&
-    file.exists(file.path(results_dir, "table_S2_alpha_by_cluster.csv"))) {
-  cross_data <- read.csv(file.path(results_dir, "table_S1_cross_tab_percent.csv"))
-  alpha_data <- read.csv(file.path(results_dir, "table_S2_alpha_by_cluster.csv"))
-  interpretation <- data.frame(
-    Pathway_Type = c("Low-hyperactivation", "Aversion-Exhaustion", "Perseveration", "Hyperactivation"),
-    Psychological_Pct = c(38.0, 28.3, 32.5, 22.5),
-    Mixed_Pct = c(62.0, 71.7, 67.5, 77.5),
-    Primary_Distribution = c("Mainly mixed", "Predominantly mixed", 
-                             "Mainly mixed", "Predominantly mixed"),
-    Characteristics = c("Low avoidance, low perseveration, low hyperactivation, low exhaustion",
-                        "High avoidance, high exhaustion",
-                        "High perseveration, high avoidance, high exhaustion",
-                        "High hyperactivation")
-  )
-  if (exists("alpha_data")) {
-    interpretation$Alpha1_Mean <- round(alpha_data$alpha1, 3)
-    interpretation$Alpha2_Mean <- round(alpha_data$alpha2, 3)
-    interpretation$Alpha3_Mean <- round(alpha_data$alpha3, 3)
-    interpretation$Alpha4_Mean <- round(alpha_data$alpha4, 3)
-  }
-  write.csv(interpretation, file.path(results_dir, "table_S6_pathway_interpretation.csv"), row.names = FALSE)
-  cat(" ✅ Table S6 saved: table_S6_pathway_interpretation.csv\n")
-  print(interpretation)
+# 1. 读取必要数据
+cross_file <- file.path(results_dir, "table_S1_cross_tab_percent.csv")
+alpha_file <- file.path(results_dir, "table_S2_alpha_by_cluster.csv")
+if(!file.exists(cross_file) || !file.exists(alpha_file)) {
+  stop("❌ 缺少必要数据文件，请先运行脚本13")
 }
+cross_data <- read.csv(cross_file)
+alpha_data <- read.csv(alpha_file)
+# 2. 提取心理型和混合型的百分比
+# cross_data 的列名应该是英文的 HCF 类型
+psychological_col <- grep("Psychological", names(cross_data), value = TRUE)[1]
+mixed_col <- grep("Mixed", names(cross_data), value = TRUE)[1]
+if(is.na(psychological_col) || is.na(mixed_col)) {
+  stop("❌ 无法识别心理型或混合型列")
+}
+# 3. 构建通路解读表
+pathway_interpretation <- data.frame(
+  Pathway_Type = c("Low-hyperactivation", "Aversion-Exhaustion", 
+                   "Perseveration", "Hyperactivation"),
+  Psychological_Pct = round(cross_data[[psychological_col]], 1),
+  Mixed_Pct = round(cross_data[[mixed_col]], 1),
+  Primary_Distribution = case_when(
+    cross_data[[mixed_col]] > 50 ~ "Predominantly mixed",
+    cross_data[[psychological_col]] > 50 ~ "Predominantly psychological",
+    TRUE ~ "Mixed distribution"
+  ),
+  Characteristics = c(
+    "Low avoidance, low perseveration, low hyperactivation, low exhaustion",
+    "High avoidance, high exhaustion",
+    "High perseveration, high avoidance, high exhaustion",
+    "High hyperactivation"
+  ),
+  stringsAsFactors = FALSE
+)
+# 4. 添加α因子均值
+if(all(c("alpha1", "alpha2", "alpha3", "alpha4") %in% names(alpha_data))) {
+  pathway_interpretation$Alpha1_Mean <- round(alpha_data$alpha1, 3)
+  pathway_interpretation$Alpha2_Mean <- round(alpha_data$alpha2, 3)
+  pathway_interpretation$Alpha3_Mean <- round(alpha_data$alpha3, 3)
+  pathway_interpretation$Alpha4_Mean <- round(alpha_data$alpha4, 3)
+}
+# 5. 按通路类型排序
+pathway_order <- c("Low-hyperactivation", "Aversion-Exhaustion", 
+                   "Perseveration", "Hyperactivation")
+pathway_interpretation$Pathway_Type <- factor(
+  pathway_interpretation$Pathway_Type, 
+  levels = pathway_order
+)
+pathway_interpretation <- pathway_interpretation[order(pathway_interpretation$Pathway_Type), ]
+# 6. 保存
+write.csv(pathway_interpretation, 
+          file.path(results_dir, "table_S6_pathway_interpretation.csv"), 
+          row.names = FALSE)
+cat("\n✅ Table S6 已生成:\n")
+print(pathway_interpretation)
 # ============================================================================
 # 11. 生成分析报告
 # ============================================================================

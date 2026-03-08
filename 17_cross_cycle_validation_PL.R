@@ -645,7 +645,6 @@ if(!is.null(model_L_suicide)) {
 # ============================================================================
 # 保存所有分析结果
 if(exists("med_care")) write.csv(med_care, file.path(RESULTS_DIR, "suicide_medical_care.csv"), row.names = FALSE)
-if(exists("mental_access")) write.csv(mental_access, file.path(RESULTS_DIR, "suicide_mental_access.csv"), row.names = FALSE)
 write.csv(social_support, file.path(RESULTS_DIR, "suicide_social_support.csv"), row.names = FALSE)
 if(exists("substance_use")) write.csv(substance_use, file.path(RESULTS_DIR, "suicide_substance.csv"), row.names = FALSE)
 write.csv(suicide_by_sev, file.path(RESULTS_DIR, "eFigure2_data.csv"), row.names = FALSE)

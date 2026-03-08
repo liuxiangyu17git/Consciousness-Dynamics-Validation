@@ -130,12 +130,12 @@ data_combined <- data_combined %>%
   )
 cat(" ✅ 数据预处理完成\n")
 # ============================================================================
-# 5. 变化轨迹潜在类别分析 (LCA) - 模拟分析
+# 5. 变化轨迹描述分析
 # ============================================================================
 cat("\n========================================================\n")
-cat("3. 变化轨迹潜在类别分析 (LCA)\n")
+cat("3. 变化轨迹描述分析\n")
 cat("========================================================\n")
-# 计算各周期关键指标的中位数
+# 计算各周期关键指标的均值
 summary_P <- data_P %>%
   group_by(HCF_type) %>%
   summarise(
@@ -172,8 +172,8 @@ trajectory_data <- full_join(summary_P, summary_L, by = "HCF_type") %>%
          trajectory_type, n_P, n_L)
 cat("\n各HCF分型的变化轨迹:\n")
 print(trajectory_data)
-write.csv(trajectory_data, file.path(RESULTS_DIR, "01_trajectory_lca.csv"), row.names = FALSE)
-cat("✅ 已保存: 01_trajectory_lca.csv\n")
+write.csv(trajectory_data, file.path(RESULTS_DIR, "01_trajectory_description.csv"), row.names = FALSE)
+cat("✅ 已保存: 01_trajectory_description.csv\n")
 # ============================================================================
 # 6. 自然实验：COVID-19影响
 # ============================================================================
@@ -193,11 +193,22 @@ covid_effect <- data_combined %>%
   )
 cat("\nCOVID前后比较:\n")
 print(covid_effect)
-# 统计检验
-t_test_phq <- t.test(phq9_total ~ covid_period, data = data_combined)
-t_test_suicide <- t.test(DPQ090 ~ covid_period, data = data_combined)
-cat(sprintf("\n抑郁总分变化 t检验: p = %.4f\n", t_test_phq$p.value))
-cat(sprintf("自杀意念变化 t检验: p = %.4f\n", t_test_suicide$p.value))
+# 创建加权设计对象
+design_combined <- svydesign(
+  id = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~ifelse(cycle == "2017-2020", WTMECPRP, WTMEC2YR),
+  nest = TRUE,
+  data = data_combined
+)
+# 加权t检验（通过线性回归）
+model_phq <- svyglm(phq9_total ~ covid_period, design = design_combined)
+model_suicide <- svyglm(DPQ090 ~ covid_period, design = design_combined)
+# 提取p值
+p_phq <- summary(model_phq)$coefficients[2, 4]
+p_suicide <- summary(model_suicide)$coefficients[2, 4]
+cat(sprintf("\n抑郁总分变化 (加权) p = %.4f\n", p_phq))
+cat(sprintf("自杀意念变化 (加权) p = %.4f\n", p_suicide))
 # 分层分析：按HCF分型
 covid_by_hcf <- data_combined %>%
   mutate(HCF_type_en = hcf_labels[HCF_type]) %>%
@@ -265,18 +276,40 @@ cat("✅ 已保存: eTable19.csv\n")
 cat("\n========================================================\n")
 cat("6. 预测模型跨时间验证\n")
 cat("========================================================\n")
-# 用P周期数据训练模型，预测L周期
+# 创建加权设计对象
+design_P_wt <- svydesign(
+  id = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~WTMECPRP,
+  nest = TRUE,
+  data = data_P
+)
+design_L_wt <- svydesign(
+  id = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~WTMEC2YR,
+  nest = TRUE,
+  data = data_L
+)
+# 从设计对象中提取数据用于预测（但保留权重信息）
 train_data <- data_P %>% filter(complete.cases(alpha1, alpha2, alpha3, alpha4, RIDAGEYR, RIAGENDR))
 test_data <- data_L %>% filter(complete.cases(alpha1, alpha2, alpha3, alpha4, RIDAGEYR, RIAGENDR))
-# 线性回归模型
-lm_model <- lm(phq9_total ~ alpha1 + alpha2 + alpha3 + alpha4 + RIDAGEYR + RIAGENDR,
-               data = train_data)
-# 预测
-train_pred <- predict(lm_model, newdata = train_data)
-test_pred <- predict(lm_model, newdata = test_data)
-# 计算预测精度
-train_r2 <- cor(train_pred, train_data$phq9_total, use = "complete.obs")^2
-test_r2 <- cor(test_pred, test_data$phq9_total, use = "complete.obs")^2
+# 加权线性回归模型
+lm_model <- svyglm(phq9_total ~ alpha1 + alpha2 + alpha3 + alpha4 + RIDAGEYR + RIAGENDR,
+                   design = design_P_wt)
+# 预测（需要手动计算，因为svyglm的predict需要新数据在设计对象中）
+# 提取系数
+coefs <- coef(lm_model)
+X_train <- model.matrix(~ alpha1 + alpha2 + alpha3 + alpha4 + RIDAGEYR + RIAGENDR, data = train_data)
+X_test <- model.matrix(~ alpha1 + alpha2 + alpha3 + alpha4 + RIDAGEYR + RIAGENDR, data = test_data)
+# 计算预测值
+train_pred <- as.numeric(X_train %*% coefs)
+test_pred <- as.numeric(X_test %*% coefs)
+# 计算预测精度（使用加权相关系数）
+train_cor <- svycor(~train_pred + phq9_total, design = subset(design_P_wt, complete.cases(alpha1, alpha2, alpha3, alpha4)))
+test_cor <- svycor(~test_pred + phq9_total, design = subset(design_L_wt, complete.cases(alpha1, alpha2, alpha3, alpha4)))
+train_r2 <- train_cor$cors[2,1]^2
+test_r2 <- test_cor$cors[2,1]^2
 cat(sprintf("\n训练集 (2017-2020) R² = %.3f\n", train_r2))
 cat(sprintf("测试集 (2021-2023) R² = %.3f\n", test_r2))
 # 逻辑回归模型（预测抑郁）
@@ -352,8 +385,8 @@ cat("一、变化轨迹LCA\n")
 print(trajectory_data)
 cat("\n二、COVID-19自然实验\n")
 print(covid_effect)
-cat(sprintf("\n抑郁总分变化 p = %.4f\n", t_test_phq$p.value))
-cat(sprintf("自杀意念变化 p = %.4f\n", t_test_suicide$p.value))
+cat(sprintf("\n抑郁总分变化 (加权) p = %.4f\n", p_phq))
+cat(sprintf("自杀意念变化 (加权) p = %.4f\n", p_suicide))
 cat("\n三、年龄-时期-队列分析\n")
 print(head(apc_data))
 cat("\n四、预测模型跨时间验证\n")

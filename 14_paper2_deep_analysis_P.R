@@ -141,7 +141,7 @@ if (!"sleep_adequate" %in% names(data_raw) && "SLD012" %in% names(data_raw)) {
   cat(" ✓ 创建变量: sleep_adequate\n")
 }
 if (!"pa_meets_guideline" %in% names(data_raw) && "pa_total_min_week" %in% names(data_raw)) {
-  data_raw$pa_meets_guideline <- as.numeric(data_raw$pa_total_min_week >= 600)
+  data_raw$pa_meets_guideline <- as.numeric(data_raw$pa_total_min_week >= 150)
   cat(" ✓ 创建变量: pa_meets_guideline\n")
 }
 data_raw <- data_raw %>%
@@ -380,30 +380,8 @@ if ("alpha3" %in% names(data_raw)) {
 # ============================================================================
 # 10. 深化分析5：多周期验证（如果有）
 # ============================================================================
-cat("\n========================================================\n")
-cat("深化分析5：多周期验证\n")
-cat("========================================================\n")
-if ("SDDSRVYR" %in% names(data_raw) && length(unique(data_raw$SDDSRVYR)) > 1) {
-  design5 <- svydesign(
-    id = ~SDMVPSU,
-    strata = ~SDMVSTRA,
-    weights = ~WTINTPRP,
-    nest = TRUE,
-    data = data_raw
-  )
-  cycle_by_path <- svyby(~pathway_cluster, ~SDDSRVYR, design5, svymean)
-  cat("\n【各周期通路分布】\n")
-  print(cycle_by_path)
-  cycle_test <- svychisq(~pathway_cluster + SDDSRVYR, design5)
-  cat("\n【周期×通路独立性检验】\n")
-  print(cycle_test)
-  write.csv(cycle_by_path, file.path(RESULTS_DIR, "deep5_pathway_by_cycle_P.csv"), row.names = FALSE)
-  cat("\n✅ 已保存多周期验证结果\n")
-} else {
-  cat("\n⚠️ 无多周期数据，跳过深化分析5\n")
-}
 # ============================================================================
-# 12. 炎症轨迹图 (Figure S5)
+# 12. 炎症轨迹图 (Figure S5) - P周期修正版（使用"se"列）
 # ============================================================================
 cat("\n========================================================\n")
 cat("12. 生成炎症轨迹图: Figure S5\n")
@@ -430,13 +408,21 @@ if ("hs_crp_mgl" %in% names(data_raw) && "age_group" %in% names(data_raw)) {
   inflam_df <- data.frame(
     通路 = as.character(inflam_trajectory$pathway_cluster),
     年龄组 = as.character(inflam_trajectory$age_group),
-    hs_crp = round(inflam_trajectory$hs_crp_mgl, 2),
-    SE = round(inflam_trajectory$se.hs_crp_mgl, 2),
+    hs_crp = round(as.numeric(inflam_trajectory$hs_crp_mgl), 2),
     stringsAsFactors = FALSE
   )
+  # ✅ P周期标准误在 "se" 列中
+  if ("se" %in% names(inflam_trajectory)) {
+    inflam_df$SE <- round(as.numeric(inflam_trajectory$se), 2)
+    cat(" ✅ 使用标准误列: se\n")
+  } else {
+    inflam_df$SE <- NA
+    cat(" ⚠️ 未找到标准误列\n")
+  }
   print(inflam_df)
   # 保存数据
   write.csv(inflam_df, file.path(RESULTS_DIR, "table_deep_inflammation_trajectory_P.csv"), row.names = FALSE)
+  # 绘图（仅当有标准误时）
   if (nrow(inflam_df) > 0 && !all(is.na(inflam_df$SE))) {
     # 创建英文标签
     inflam_df$通路_en <- factor(inflam_df$通路,
@@ -475,12 +461,15 @@ if ("hs_crp_mgl" %in% names(data_raw) && "age_group" %in% names(data_raw)) {
     ggsave(file.path(RESULTS_DIR, "figure_S5_inflammation_trajectory_P.png"), 
            p, width = 10, height = 6, dpi = 300)
     cat(" ✅ Figure S5 saved: figure_S5_inflammation_trajectory_P.pdf and .png\n")
+  } else {
+    cat(" ⚠️ 无法计算标准误，跳过绘图，但炎症数据已保存\n")
+    cat("   数据文件: table_deep_inflammation_trajectory_P.csv\n")
   }
 }
 # ============================================================================
-# 13. 保存会话信息
+# 12. 保存会话信息
 # ============================================================================
-cat("\n13. 保存会话信息...\n")
+cat("\n14. 保存会话信息...\n")
 session_info_path <- file.path(LOG_DIR, "14_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期论文2深入分析会话信息\n")
@@ -496,9 +485,9 @@ print(sessionInfo())
 sink()
 cat(" ✅ 会话信息已保存\n")
 # ============================================================================
-# 14. 保存R代码副本
+# 13. 保存R代码副本
 # ============================================================================
-cat("\n14. 保存R代码副本...\n")
+cat("\n13. 保存R代码副本...\n")
 scripts_dir <- file.path("C:/NHANES_Data", "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
@@ -513,7 +502,7 @@ cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
 cat(" ✅ 代码清单已保存\n")
 # ============================================================================
-# 15. 完成
+# 14. 完成
 # ============================================================================
 cat("\n========================================================\n")
 cat("✅ P周期论文2深入分析完成！\n")

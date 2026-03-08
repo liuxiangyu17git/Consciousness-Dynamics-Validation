@@ -111,30 +111,30 @@ design <- svydesign(
 )
 cat(" ✅ 设计对象创建成功\n\n")
 # ============================================================================
-# 4. 敏感性分析1：排除服药人群 (Table S8)
+# 4. 敏感性分析1：排除特定人群 (Table S8)
 # ============================================================================
 cat("\n========================================================\n")
-cat("2. 敏感性分析1：排除服药人群 (Table S8)\n")
+cat("2. 敏感性分析1：排除特定人群 (Table S8)\n")
 cat("========================================================\n")
-# 定义服药变量
-data$on_medication <- with(data,
+# 定义排除标准 - 使用诚实命名
+data$exclude_from_sensitivity <- with(data,
   (antihypertensive_med == 1 & !is.na(antihypertensive_med)) |
   (antidiabetic_med == 1 & !is.na(antidiabetic_med)) |
-  (phq9_total >= 10 & !is.na(phq9_total))
+  (depression == 1 & !is.na(depression))  # 使用depression诊断而不是PHQ-9阈值
 )
-cat(sprintf("服药人数: %d (%.1f%%)\n",
-            sum(data$on_medication, na.rm = TRUE),
-            mean(data$on_medication, na.rm = TRUE) * 100))
-# 创建未服药子集
-data_no_med <- data %>% filter(!on_medication)
-cat(sprintf("未服药样本量: %d\n", nrow(data_no_med)))
+cat(sprintf("排除人数: %d (%.1f%%)\n",
+            sum(data$exclude_from_sensitivity, na.rm = TRUE),
+            mean(data$exclude_from_sensitivity, na.rm = TRUE) * 100))
+# 创建排除后的子集
+data_sensitivity <- data %>% filter(!exclude_from_sensitivity)
+cat(sprintf("敏感性分析样本量: %d\n", nrow(data_sensitivity)))
 # 创建设计对象
-design_no_med <- svydesign(
+design_sensitivity <- svydesign(
   id = ~SDMVPSU,
   strata = ~SDMVSTRA,
   weights = ~WTMEC2YR,
   nest = TRUE,
-  data = data_no_med
+  data = data_sensitivity
 )
 # 重新运行主要分析
 diseases <- c("diabetes_doctor", "hypertension", "depression", "any_cvd")
@@ -148,13 +148,13 @@ disease_names <- c(
 )
 sensitivity_results <- data.frame()
 for(disease in diseases) {
-  if(!disease %in% names(data_no_med)) next
+  if(!disease %in% names(data_sensitivity)) next  # ✅ 修正
   cat(sprintf("\n分析疾病: %s\n", disease))
   formula <- as.formula(paste0(disease, " ~ ", 
                                 paste(alpha_vars, collapse = " + "),
                                 " + RIDAGEYR + RIAGENDR"))
   model <- tryCatch({
-    svyglm(formula, design = design_no_med, family = quasibinomial())
+    svyglm(formula, design = design_sensitivity, family = quasibinomial())  # ✅ 修正
   }, error = function(e) {
     cat("  模型失败:", e$message, "\n")
     return(NULL)
@@ -187,21 +187,14 @@ if(file.exists(original_file) && nrow(sensitivity_results) > 0) {
     "抑郁" = "Depression",
     "心血管疾病" = "CVD"
   )
-  # 创建α因子映射
-  alpha_map <- c(
-    "alpha1" = "alpha1",
-    "alpha2" = "alpha2", 
-    "alpha3" = "alpha3",
-    "alpha4" = "alpha4"
-  )
-original_subset <- original %>%
-  filter(疾病 %in% names(disease_map)) %>%
-  mutate(
-    Disease = disease_map[as.character(疾病)],  
-    Alpha_Factor = as.character(α因子)          
-  ) %>%
-  select(Disease, Alpha_Factor, OR) %>%
-  rename(OR_Original = OR)
+  original_subset <- original %>%
+    filter(疾病 %in% names(disease_map)) %>%
+    mutate(
+      Disease = disease_map[as.character(疾病)],  
+      Alpha_Factor = as.character(α因子)          
+    ) %>%
+    select(Disease, Alpha_Factor, OR) %>%
+    rename(OR_Original = OR)
   sensitivity_results <- sensitivity_results %>%
     left_join(original_subset, by = c("Disease", "Alpha_Factor")) %>%
     mutate(

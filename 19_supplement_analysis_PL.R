@@ -172,37 +172,6 @@ var_consistency <- data.frame(
 write.csv(var_consistency, file.path(RESULTS_DIR, "eTable3.csv"), row.names = FALSE)
 cat("✅ Table S2 saved: eTable3.csv\n")
 # ============================================================================
-# 6. FDR校正前后对比 (Table S3)
-# ============================================================================
-cat("\n========================================================\n")
-cat("4. FDR校正前后对比 (Table S3)\n")
-cat("========================================================\n")
-# 读取原始p值（从Table 3）
-alpha_disease_file <- file.path("C:/NHANES_Data/CLEAN/results/paper3", "alpha_disease_all.csv")
-if(file.exists(alpha_disease_file)) {
-  alpha_res <- read.csv(alpha_disease_file)
-  # FDR校正
-  alpha_res$p_fdr <- p.adjust(alpha_res$p_value, method = "fdr")
-  # 创建英文版表格
-  alpha_res_en <- data.frame(
-    System = system_labels[alpha_res$系统],
-    Disease = disease_labels[alpha_res$疾病],
-    Alpha_Factor = alpha_labels[alpha_res$α因子],
-    Raw_p = alpha_res$p_value,
-    FDR_p = alpha_res$p_fdr,
-    Raw_Significant = ifelse(alpha_res$p_value < 0.05, "Yes", "No"),
-    FDR_Significant = ifelse(alpha_res$p_fdr < 0.05, "Yes", "No")
-  )
-  # 统计
-  n_sig_raw <- sum(alpha_res$p_value < 0.05)
-  n_sig_fdr <- sum(alpha_res$p_fdr < 0.05)
-  cat(sprintf("\nFDR校正前显著结果数: %d\n", n_sig_raw))
-  cat(sprintf("FDR校正后显著结果数: %d (%.1f%%保留)\n", 
-              n_sig_fdr, n_sig_fdr/n_sig_raw*100))
-  write.csv(alpha_res_en, file.path(RESULTS_DIR, "eTable7.csv"), row.names = FALSE)
-  cat("✅ Table S3 saved: eTable7.csv\n")
-}
-# ============================================================================
 # 6a. 生成 eTable 7 - FDR校正对比表（详细版）
 # ============================================================================
 cat("\n========================================================\n")

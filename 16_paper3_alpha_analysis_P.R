@@ -565,27 +565,52 @@ if(test_alpha$p < 0.05) {
   cat("⚠️ α因子的增量预测价值未达到统计学显著性\n")
 }
 # ============================================================================
-# 8a. 新增：增量预测价值的优化分析（JAMA推荐格式）
+# 8a. 增量预测价值的优化分析（JAMA推荐格式）- 修正版R²计算
 # ============================================================================
 cat("\n========================================================\n")
 cat("8a. 增量预测价值优化分析（JAMA推荐格式）\n")
 cat("========================================================\n")
-# 计算R²（如果原代码中没有计算）
-r2_model1 <- cor(model_step1$fitted.values, model_step1$y, use = "complete.obs")^2
-r2_model2 <- cor(model_step2$fitted.values, model_step2$y, use = "complete.obs")^2
-r2_model3 <- cor(model_step3$fitted.values, model_step3$y, use = "complete.obs")^2
+# 定义计算R²的函数（适用于svyglm对象）
+calc_r2 <- function(model) {
+  if(inherits(model, "svyglm")) {
+    # 对于svyglm对象，使用偏差比
+    1 - (model$deviance / model$null.deviance)
+  } else if(inherits(model, "lm")) {
+    summary(model)$r.squared
+  } else {
+    NA
+  }
+}
+# 计算三个模型的R²
+r2_model1 <- calc_r2(model_step1)
+r2_model2 <- calc_r2(model_step2)
+r2_model3 <- calc_r2(model_step3)
+# 显示R²结果
+cat("\n【R²计算结果】\n")
+cat(sprintf(" 模型1 (人口学) R² = %.4f\n", r2_model1))
+cat(sprintf(" 模型2 (+生理指标) R² = %.4f\n", r2_model2))
+cat(sprintf(" 模型3 (+α因子) R² = %.4f\n", r2_model3))
+# 计算增量R²
+delta_r2_phys <- r2_model2 - r2_model1
+delta_r2_alpha <- r2_model3 - r2_model2
+cat(sprintf("\n 生理指标增量R² = %.4f\n", delta_r2_phys))
+cat(sprintf(" α因子增量R² = %.4f\n", delta_r2_alpha))
+# 计算增量结果
 incremental_predictive_value <- data.frame(
   Comparison = c("Adding physiological indicators", "Adding alpha factors"),
-  Delta_AIC = c(aic_values[2] - aic_values[1], aic_values[3] - aic_values[2]),  
-  Delta_BIC = c(bic_values[2] - bic_values[1], bic_values[3] - bic_values[2]),  
+  Delta_AIC = c(aic_values[2] - aic_values[1], aic_values[3] - aic_values[2]),
+  Delta_BIC = c(bic_values[2] - bic_values[1], bic_values[3] - bic_values[2]),
   F_value = c(test_phys$Ftest, test_alpha$Ftest),
   df = c(test_phys$df, test_alpha$df),
   P_value = c(test_phys$p, test_alpha$p),
-  Cohen_f2 = round(c(f2_phys, f2_alpha), 4)
+  Cohen_f2 = round(c(f2_phys, f2_alpha), 4),
+  R2_before = c(r2_model1, r2_model2),
+  R2_after = c(r2_model2, r2_model3),
+  R2_increment = c(delta_r2_phys, delta_r2_alpha)
 )
-# 保存增量结果（P周期加 _P）
+# 保存增量结果（加 _P 后缀）
 write.csv(incremental_predictive_value, 
-          file.path(RESULTS_DIR, "eTable26.csv"),
+          file.path(RESULTS_DIR, "eTable26_P.csv"),  # ✅ 加 _P
           row.names = FALSE)
 # 生成详细比较表格
 supp_table_model_comparison <- data.frame(
@@ -601,15 +626,16 @@ supp_table_model_comparison <- data.frame(
   ),
   AIC = round(aic_values, 2),
   BIC = round(bic_values, 2),
-  R2 = round(c(r2_model1, r2_model2, r2_model3), 3)
+  R2 = round(c(r2_model1, r2_model2, r2_model3), 4),
+  Delta_R2 = c(NA, round(delta_r2_phys, 4), round(delta_r2_alpha, 4))
 )
-# 保存详细表格（P周期加 _P）
+# 保存详细表格（加 _P 后缀）
 write.csv(supp_table_model_comparison, 
-          file.path(RESULTS_DIR, "eTable26_details.csv"), 
+          file.path(RESULTS_DIR, "eTable26_details_P.csv"),  # ✅ 加 _P
           row.names = FALSE)
 cat("\n✅ 增量预测价值优化分析完成\n")
-cat("   新增文件: eTable26.csv\n")
-cat("   新增文件: eTable26_details.csv\n")
+cat("   新增文件: eTable26_P.csv (包含R²增量)\n")
+cat("   新增文件: eTable26_details_P.csv (详细模型比较)\n")
 # ============================================================================
 # 11. 分析5：系统特异性疾病负担 - 修正循环论证
 # ============================================================================
