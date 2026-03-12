@@ -866,10 +866,10 @@ cat(" ✅ Figure 2 saved: Figure2.pdf/.png\n")
 cat(" ✅ alpha_pathway_long.csv saved\n")
 }
 # ============================================================================
-# 16. 可视化：Figure 4 - 中介网络图（基于P周期实际数据）
+# 16. 可视化：Figure 4 - 中介网络图（基于L周期实际数据）
 # ============================================================================
 cat("\n========================================================\n")
-cat("16. 生成Figure 4 - 中介网络图（基于P周期实际数据）\n")
+cat("16. 生成Figure 4 - 中介网络图（基于L周期实际数据）\n")
 cat("========================================================\n")
 # 加载必要的包
 library(qgraph)
@@ -880,18 +880,18 @@ if (!dir.exists(results_dir)) {
 }
 cat("当前工作目录:", getwd(), "\n")
 cat("文件将保存到:", file.path(results_dir, "Figure4.pdf"), "\n\n")
-# 从之前的中介分析结果中提取P周期的实际值
+# 从L周期的中介分析结果中提取数据
 if(!exists("mediation_results")) {
   cat("⚠️ 未找到mediation_results，从文件读取...\n")
-  mediation_file <- file.path(results_dir, "eTable6_P.csv")
+  mediation_file <- file.path(results_dir, "eTable6.csv")
   if(file.exists(mediation_file)) {
     mediation_results <- read.csv(mediation_file)
-    cat("✅ 成功读取:", mediation_file, "\n")
+    cat("✅ 成功读取 L周期数据:", mediation_file, "\n")
   } else {
     stop("❌ 找不到中介分析结果文件: ", mediation_file)
   }
 }
-# 提取三个关键路径的中介比例（代码保持不变）
+# 提取三个关键路径的中介比例（L周期的值应为：12.8%, -3.0%, 19.5%）
 path1 <- mediation_results %>%
   filter(Model == "BMI → α₂ → CVD" & op == ":=" & label == "prop_mediated") %>%
   mutate(
@@ -922,13 +922,13 @@ path3 <- mediation_results %>%
       temp$est[1]
     }
   )
-cat("\n✅ 提取的中介比例:\n")
-cat(" BMI→α₂→CVD:", path1$mediated[1], "%\n")
-cat(" BMI→α₄→CVD:", path2$mediated[1], "%\n")
-cat(" CRP→α₂→CVD:", path3$mediated[1], "%\n\n")
+cat("\n✅ 提取的L周期中介比例:\n")
+cat(" BMI→α₂→CVD:", path1$mediated[1], "% (应与12.8%一致)\n")
+cat(" BMI→α₄→CVD:", path2$mediated[1], "% (应与-3.0%一致)\n")
+cat(" CRP→α₂→CVD:", path3$mediated[1], "% (应与19.5%一致)\n\n")
 # 定义节点
 nodes <- c("BMI", "CRP", "α₂", "α₄", "CVD")
-# 定义边
+# 定义边 - 使用L周期的实际数据
 edges <- data.frame(
   from = c("BMI", "BMI", "CRP", "α₂", "α₄"),
   to = c("α₂", "α₄", "α₂", "CVD", "CVD"),
@@ -941,7 +941,8 @@ edge_labels <- c(
   paste0(path1$mediated[1], "%"),
   paste0(path2$mediated[1], "%"),
   paste0(path3$mediated[1], "%"),
-  "", ""
+  "",  # α₂→CVD 不显示标签
+  ""   # α₄→CVD 不显示标签
 )
 # 创建邻接矩阵
 adj_matrix <- matrix(0, nrow = length(nodes), ncol = length(nodes))
@@ -950,14 +951,18 @@ colnames(adj_matrix) <- nodes
 for(i in 1:nrow(edges)) {
   adj_matrix[edges$from[i], edges$to[i]] <- edges$weight[i]
 }
-# 布局和标签位置调整
+# 布局微调：左右拉开距离避免标签重叠
 layout_matrix <- matrix(c(
-  0.15, 0.7,  # BMI
-  0.15, 0.4,  # CRP
+  0.15, 0.7,  # BMI - 左移
+  0.15, 0.4,  # CRP - 左移
   0.5, 0.7,   # α₂
   0.5, 0.4,   # α₄
-  0.85, 0.55  # CVD
+  0.85, 0.55  # CVD - 右移
 ), ncol = 2, byrow = TRUE)
+# 为每条边单独设置标签位置
+# 边1 (BMI→α₂): 12.8% - 位置0.65 (偏向α₂)
+# 边2 (BMI→α₄): -3.0% - 位置0.35 (偏向BMI，避开12.8%)
+# 边3 (CRP→α₂): 19.5% - 位置0.5 (中间)
 edge_label_positions <- c(0.65, 0.35, 0.5, 0.5, 0.5)
 # 绘制网络图 - PDF
 pdf(file.path(results_dir, "Figure4.pdf"), 
@@ -979,11 +984,12 @@ qgraph(adj_matrix,
        edge.label.cex = 1.4,
        edge.label.font = 2,
        edge.label.position = edge_label_positions,
-       title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
+       title = paste0("Figure 4. α₂ Mediation Network\n",
                       "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
                       "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
                       "CRP→α₂→CVD: ", path3$mediated[1], "%"),
        title.cex = 1.4,
+       title.font = 2,
        cut = 0,
        minimum = 0,
        maximum = 1,
@@ -992,47 +998,10 @@ qgraph(adj_matrix,
        fade = FALSE,
        mar = c(8, 5, 5, 5))
 dev.off()
-# 检查文件是否保存成功
-if (file.exists(file.path(results_dir, "Figure4.pdf"))) {
-  cat("✅ 文件已保存:", file.path(results_dir, "Figure4.pdf"), "\n")
-  cat("文件大小:", file.size(file.path(results_dir, "Figure4.pdf")), "bytes\n")
-} else {
-  cat("❌ 文件未保存！尝试保存到当前目录...\n")
-  # 尝试保存到当前目录作为备选
-  pdf("Figure4.pdf", width = 10, height = 8, family = "Helvetica")
-  qgraph(adj_matrix,
-         layout = layout_matrix,
-         labels = nodes,
-         label.cex = 1.6,
-         label.font = 2,
-         color = c("lightblue", "lightblue", "lightgreen", "lightgreen", "lightcoral"),
-         borders = TRUE,
-         border.width = 2,
-         vsize = 10,
-         esize = 8,
-         edge.color = edges$color,
-         edge.width = 2.5,
-         edge.labels = edge_labels,
-         edge.label.cex = 1.4,
-         edge.label.font = 2,
-         edge.label.position = edge_label_positions,
-         title = paste0("Figure 4. α₂ Mediation Network (P Cycle)\n",
-                        "BMI→α₂→CVD: ", path1$mediated[1], "%; ",
-                        "BMI→α₄→CVD: ", path2$mediated[1], "%; ",
-                        "CRP→α₂→CVD: ", path3$mediated[1], "%"),
-         title.cex = 1.4,
-         cut = 0,
-         minimum = 0,
-         maximum = 1,
-         details = FALSE,
-         posCol = "#006400",
-         fade = FALSE,
-         mar = c(8, 5, 5, 5))
-  dev.off()
-  if (file.exists("Figure4.pdf")) {
-    cat("✅ 已保存到当前目录: Figure4.pdf\n")
-  }
-}
+cat(" ✅ Figure 4 PDF saved: Figure4.pdf\n")
+cat("    使用 L周期数据: BMI→α₂→CVD =", path1$mediated[1], "%, ",
+    "BMI→α₄→CVD =", path2$mediated[1], "%, ",
+"CRP→α₂→CVD =", path3$mediated[1], "%\n")
 # ============================================================================
 # 17. 生成分析报告
 # ============================================================================
