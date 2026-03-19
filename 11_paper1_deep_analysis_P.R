@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER1_RESULTS_P_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 11_paper1_deep_analysis_P.R
 # 描述: NHANES 2017-2020 (P周期) paper1深入分析 - C层中介、D层深化、行为交互
@@ -18,7 +26,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -38,15 +45,12 @@ hcf_labels <- c(
   "身心混合型" = "Psychosomatic Mixed"
 )
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")
-RESULTS_DIR <- file.path(CLEAN_DATA_DIR, "results")
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建结果目录
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("11_paper1_deep_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("11_paper1_deep_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 11_paper1_deep_analysis_P.R\n")
@@ -65,7 +69,7 @@ cat("\n")
 # 2. 加载数据
 # ============================================================================
 cat("1. 加载数据...\n")
-data_file <- file.path(CLEAN_DATA_DIR, "final_analysis_dataset_P.rds")
+data_file <- file.path(P_DATA_DIR, "final_analysis_dataset_P.rds")
 if(!file.exists(data_file)) {
   stop("错误: final_analysis_dataset_P.rds 不存在")
 }
@@ -170,7 +174,7 @@ behaviors <- list(
   "非重度饮酒" = "not_heavy_drinker"
 )
 # 加载健康行为变量
-health_file <- file.path(CLEAN_DATA_DIR, "healthbehavior_vars_P.rds")
+health_file <- file.path(P_DATA_DIR, "healthbehavior_vars_P.rds")
 if(file.exists(health_file)) {
   health <- readRDS(health_file)
   data$pa_meets_guideline <- health$pa_meets_guideline[match(data$SEQN, health$SEQN)]
@@ -348,7 +352,7 @@ ggsave(file.path(RESULTS_DIR, "paper1_figure_deep_sleep_effects_P.png"), p2, wid
 cat("\n========================================================\n")
 cat("9. 生成深入分析报告\n")
 cat("========================================================\n")
-report_file <- file.path(LOG_DIR, "11_paper1_deep_report_P.txt")
+report_file <- file.path(LOGS_DIR, "11_paper1_deep_report_P.txt")
 sink(report_file)
 cat("论文1深入分析报告 (P周期)\n")
 cat("==========================\n\n")
@@ -376,7 +380,7 @@ cat(" ✅ 深入分析报告已保存\n\n")
 # 10. 保存会话信息（期刊要求）
 # ============================================================================
 cat("10. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "11_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "11_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期论文1深入分析会话信息\n")
 cat("==================================\n")
@@ -394,7 +398,7 @@ cat(" ✅ 会话信息已保存\n")
 # 11. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n11. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -402,7 +406,7 @@ code_save_path <- file.path(scripts_dir, "11_paper1_deep_analysis_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "11_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "11_code_list_P.txt")
 cat("脚本名称: 11_paper1_deep_analysis_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -417,5 +421,5 @@ cat("结果已保存至:", RESULTS_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()

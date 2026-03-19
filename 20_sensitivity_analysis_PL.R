@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- SENSITIVITY_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 20_sensitivity_analysis.R
 # 描述: 敏感性分析合集 - 排除服药者、非线性关系、青年亚组分析
@@ -6,7 +14,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必要包
@@ -44,13 +51,11 @@ disease_labels <- c(
 # ============================================================================
 # 2. 配置路径
 # ============================================================================
-L_DATA_DIR <- "C:/NHANES_Data/CLEAN"
-RESULTS_DIR <- "C:/NHANES_Data/CLEAN/results/sensitivity"
-LOG_DIR <- "C:/NHANES_Data/CLEAN/logs"
+L_DATA_DIR <- L_DATA_DIR
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志
-log_file <- file.path(LOG_DIR, paste0("20_sensitivity_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("20_sensitivity_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 20_sensitivity_analysis.R\n")
@@ -76,6 +81,10 @@ cat(sprintf("样本量: %d\n", nrow(data)))
 # ============================================================================
 cat("\n=== 合并通路聚类数据 ===\n")
 pathway_file <- file.path(L_DATA_DIR, "results", "paper2", "paper2_analysis_data.rds")
+
+# 定义PAPER3_RESULTS_DIR
+PAPER3_RESULTS_DIR <- file.path(L_DATA_DIR, "results", "paper3")
+
 if(file.exists(pathway_file)) {
   pathway_data <- readRDS(pathway_file)
   cat("通路数据加载成功，维度:", dim(pathway_data), "\n")
@@ -177,7 +186,7 @@ for(disease in diseases) {
   }
 }
 # 读取原始结果进行比较
-original_file <- file.path("C:/NHANES_Data/CLEAN/results/paper3", "alpha_disease_all.csv")
+original_file <- file.path(PAPER3_RESULTS_DIR, "alpha_disease_all.csv")
 if(file.exists(original_file) && nrow(sensitivity_results) > 0) {
   original <- read.csv(original_file)
   # 创建中文到英文的疾病映射
@@ -414,7 +423,7 @@ if(exists("youth_severe")) {
 cat("\n========================================================\n")
 cat("5. 生成敏感性分析报告\n")
 cat("========================================================\n")
-sink(file.path(LOG_DIR, "20_sensitivity_report.txt"))
+sink(file.path(LOGS_DIR, "20_sensitivity_report.txt"))
 cat("Sensitivity Analysis Report\n")
 cat("===========================\n\n")
 cat("Analysis time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
@@ -443,7 +452,7 @@ cat("\n✅ Sensitivity analysis report saved\n")
 # 8. 保存会话信息
 # ============================================================================
 cat("\n6. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "20_session_info.txt")
+session_info_path <- file.path(LOGS_DIR, "20_session_info.txt")
 sink(session_info_path)
 cat("Sensitivity Analysis Session Information\n")
 cat("=======================================\n")
@@ -461,13 +470,13 @@ cat(" ✅ Session information saved\n")
 # 9. 保存R代码副本
 # ============================================================================
 cat("\n7. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) dir.create(scripts_dir, recursive = TRUE)
 code_save_path <- file.path(scripts_dir, "20_sensitivity_analysis.R")
 cat("\n⚠️  Please manually save the current script to:\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   This is a JAMA Psychiatry requirement: all analysis code must be saved and made public.\n")
-code_list_path <- file.path(LOG_DIR, "20_code_list.txt")
+code_list_path <- file.path(LOGS_DIR, "20_code_list.txt")
 cat("Script name: 20_sensitivity_analysis.R\n", file = code_list_path)
 cat("Generation time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("Suggested save location:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -481,3 +490,6 @@ cat("Completion time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("Results saved to:", RESULTS_DIR, "\n")
 cat("========================================================\n")
 sink()
+
+# 添加PAPER3_RESULTS_DIR定义
+PAPER3_RESULTS_DIR <- file.path(L_DATA_DIR, "results", "paper3")

@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 02_data_merge_P.R
 # 描述: NHANES 2017-2020 (P周期) 数据合并 - 完全符合CDC/NCHS教程要求
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,13 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")  # P周期清洗后文件目录
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("02_merge_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("02_merge_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 02_data_merge_P.R\n")
@@ -81,7 +81,7 @@ MERGE_ORDER <- c(
   "P_MCQ_clean.rds"     # 20. 医疗状况问卷
 )
 # 获取实际文件
-actual_files <- list.files(CLEAN_DATA_DIR, pattern = "_clean\\.rds$")
+actual_files <- list.files(P_DATA_DIR, pattern = "_clean\\.rds$")
 cat("找到清洗文件:", length(actual_files), "个\n")
 # 按教程顺序排序
 files_to_merge <- intersect(MERGE_ORDER, actual_files)
@@ -112,7 +112,7 @@ merge_log <- list(
 # ============================================================================
 load_and_validate <- function(file_name, step) {
   cat(sprintf("\n[%d/%d] 加载：%s\n", step, length(files_to_merge), file_name))
-  file_path <- file.path(CLEAN_DATA_DIR, file_name)
+  file_path <- file.path(P_DATA_DIR, file_name)
   file_log <- list(
     file = file_name,
     timestamp = Sys.time(),
@@ -272,12 +272,12 @@ validation_results <- list()
 # 1. 样本量一致性验证
 validation_results$sample_size <- list(
   expected = if ("P_DEMO_clean.rds" %in% files_to_merge) {
-    demo <- readRDS(file.path(CLEAN_DATA_DIR, "P_DEMO_clean.rds"))
+    demo <- readRDS(file.path(P_DATA_DIR, "P_DEMO_clean.rds"))
     nrow(demo)
   } else NA,
   actual = nrow(master_data),
   status = if ("P_DEMO_clean.rds" %in% files_to_merge) {
-    demo <- readRDS(file.path(CLEAN_DATA_DIR, "P_DEMO_clean.rds"))
+    demo <- readRDS(file.path(P_DATA_DIR, "P_DEMO_clean.rds"))
     nrow(demo) == nrow(master_data)
   } else FALSE
 )
@@ -347,17 +347,17 @@ merge_log$validation_results <- validation_results
 cat("\n步骤4: 保存合并结果\n")
 cat("----------------------------------------\n")
 # 保存主数据集 - 使用 _P 后缀
-master_path <- file.path(CLEAN_DATA_DIR, "master_P.rds")
+master_path <- file.path(P_DATA_DIR, "master_P.rds")
 cat("1. 保存master_P.rds...")
 saveRDS(master_data, master_path)
 cat(" ✅", format(file.size(master_path), units = "MB"), "\n")
 # 保存合并日志
-log_path <- file.path(CLEAN_DATA_DIR, "merge_log_P.rds")
+log_path <- file.path(P_DATA_DIR, "merge_log_P.rds")
 cat("2. 保存合并日志...")
 saveRDS(merge_log, log_path)
 cat(" ✅\n")
 # 保存数据集描述
-desc_path <- file.path(CLEAN_DATA_DIR, "master_P_description.txt")
+desc_path <- file.path(P_DATA_DIR, "master_P_description.txt")
 sink(desc_path)
 cat("NHANES P周期主数据集描述\n")
 cat("==========================\n\n")
@@ -377,7 +377,7 @@ cat("3. 保存数据集描述... ✅\n")
 # ============================================================================
 cat("\n步骤5: 生成最终报告\n")
 cat("===================\n")
-report_path <- file.path(LOG_DIR, "02_merge_report_P.txt")
+report_path <- file.path(LOGS_DIR, "02_merge_report_P.txt")
 sink(report_path)
 cat("NHANES P周期数据合并完成报告\n")
 cat("==============================\n\n")
@@ -417,7 +417,7 @@ cat("✅ 最终报告已保存\n")
 # ============================================================================
 cat("\n步骤6: 保存会话信息\n")
 cat("===================\n")
-session_info_path <- file.path(LOG_DIR, "02_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "02_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期数据合并会话信息\n")
 cat("==============================\n")
@@ -436,7 +436,7 @@ cat("✅ 会话信息已保存\n")
 # ============================================================================
 cat("\n步骤7: 保存R代码副本\n")
 cat("===================\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -444,7 +444,7 @@ code_save_path <- file.path(scripts_dir, "02_data_merge_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "02_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "02_code_list_P.txt")
 cat("脚本名称: 02_data_merge_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -455,9 +455,9 @@ cat(" ✅ 代码清单已保存\n")
 cat("\n========================================================\n")
 cat("✅ P周期合并完成！\n")
 cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
-cat("输出目录:", CLEAN_DATA_DIR, "\n")
+cat("输出目录:", P_DATA_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "LOGS_DIR")))
 gc()

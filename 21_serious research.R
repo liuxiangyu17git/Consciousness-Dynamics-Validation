@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- SERIOUS_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 21_serious research.R
 # 描述: 严谨的补充分析
@@ -17,7 +25,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必要包
@@ -36,36 +43,31 @@ for (pkg in required_packages) {
 # ============================================================================
 # 2. 定义所有路径变量（必须先定义！）
 # ============================================================================
-PROJECT_ROOT <- "C:/NHANES_Data"
-L_DATA_DIR <- file.path(PROJECT_ROOT, "CLEAN")
-P_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")
-RESULTS_DIR <- file.path(PROJECT_ROOT, "CLEAN", "results", "serious_research")
-LOG_DIR <- file.path(L_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建目录（确保存在）
 dir.create(PROJECT_ROOT, showWarnings = FALSE, recursive = TRUE)
 dir.create(L_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(P_DATA_DIR, showWarnings = FALSE, recursive = TRUE)
 dir.create(RESULTS_DIR, showWarnings = FALSE, recursive = TRUE)
-dir.create(LOG_DIR, showWarnings = FALSE, recursive = TRUE)
+dir.create(LOGS_DIR, showWarnings = FALSE, recursive = TRUE)
 # ============================================================================
 # 3. 诊断代码（现在可以正常运行）
 # ============================================================================
 cat("\n🔍 开始诊断 ==========\n")
 # 1. 检查 RESULTS_DIR
-cat("1. RESULTS_DIR:\n")
 cat("   值:", RESULTS_DIR, "\n")
 cat("   存在:", dir.exists(RESULTS_DIR), "\n")
 # 2. 测试写入 RESULTS_DIR
-test1 <- file.path(RESULTS_DIR, "test1.csv")
+test1 <- file.path(SERIOUS_RESULTS_DIR, "test1.csv")
 write.csv(data.frame(test = 1), test1)
 cat("   写入测试:", file.exists(test1), "\n")
 if (file.exists(test1)) file.remove(test1)
-# 3. 检查 LOG_DIR
-cat("\n2. LOG_DIR:\n")
-cat("   值:", LOG_DIR, "\n")
-cat("   存在:", dir.exists(LOG_DIR), "\n")
-# 4. 测试写入 LOG_DIR
-test2 <- file.path(LOG_DIR, "test2.txt")
+# 3. 检查 LOGS_DIR
+cat("\n2. LOGS_DIR:\n")
+cat("   值:", LOGS_DIR, "\n")
+cat("   存在:", dir.exists(LOGS_DIR), "\n")
+# 4. 测试写入 LOGS_DIR
+test2 <- file.path(LOGS_DIR, "test2.txt")
 writeLines("test", test2)
 cat("   写入测试:", file.exists(test2), "\n")
 if (file.exists(test2)) file.remove(test2)
@@ -73,7 +75,7 @@ cat("\n🔍 诊断结束 ==========\n\n")
 # ============================================================================
 # 4. 启动日志（现在所有路径都已定义）
 # ============================================================================
-log_file <- file.path(LOG_DIR, paste0("21_serious_research_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("21_serious_research_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 21_serious research.R\n")
@@ -83,6 +85,10 @@ cat("========================================================\n\n")
 # 2. 加载两个周期的数据
 # ============================================================================
 cat("1. 加载两个周期的数据...\n")
+
+# 设置结果保存目录
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
 # L周期 (2021-2023)
 L_file <- file.path(L_DATA_DIR, "analysis_dataset_subset.rds")
 if (!file.exists(L_file)) stop("错误: 找不到L周期数据")
@@ -192,7 +198,7 @@ abbr_key <- data.frame(
     "goal_edu", "goal_economic", "goal_health"
   )
 )
-write.csv(abbr_key, file.path(RESULTS_DIR, "eTable28_abbr_key.csv"), row.names = FALSE)
+write.csv(abbr_key, file.path(SERIOUS_RESULTS_DIR, "eTable28_abbr_key.csv"), row.names = FALSE)
 # ============================================================================
 # L周期 (2021-2023) - 直接从主数据获取（包含设计变量）
 # ============================================================================
@@ -237,7 +243,7 @@ if(length(adult_idx_L) > 0) {
       rownames(cor_matrix_L_rounded) <- col_abbr[1:length(existing_vars_L)]
       colnames(cor_matrix_L_rounded) <- col_abbr[1:length(existing_vars_L)]
       # 保存完整版
-      write.csv(cor_matrix_L_rounded, file.path(RESULTS_DIR, "eTable28_full.csv"), row.names = TRUE)
+      write.csv(cor_matrix_L_rounded, file.path(SERIOUS_RESULTS_DIR, "eTable28_full.csv"), row.names = TRUE)
       cat("✅ 已保存 eTable28_full.csv (加权版)\n")
       # 创建简洁版表格
       eTable28 <- as.data.frame(cor_matrix_L_rounded)
@@ -246,7 +252,7 @@ if(length(adult_idx_L) > 0) {
       })
       eTable28$Component <- rownames(eTable28)
       eTable28 <- eTable28[, c("Component", col_abbr[1:length(existing_vars_L)])]
-      write.csv(eTable28, file.path(RESULTS_DIR, "eTable28.csv"), row.names = FALSE)
+      write.csv(eTable28, file.path(SERIOUS_RESULTS_DIR, "eTable28.csv"), row.names = FALSE)
       cat("✅ 已保存 eTable28.csv (加权简洁版)\n")
     } else {
       cat("⚠️ 完整案例不足100，使用未加权相关\n")
@@ -255,7 +261,7 @@ if(length(adult_idx_L) > 0) {
       cor_matrix_L_rounded <- round(cor_matrix_L, 2)
       rownames(cor_matrix_L_rounded) <- col_abbr[1:length(existing_vars_L)]
       colnames(cor_matrix_L_rounded) <- col_abbr[1:length(existing_vars_L)]
-      write.csv(cor_matrix_L_rounded, file.path(RESULTS_DIR, "eTable28_full_unweighted.csv"), row.names = TRUE)
+      write.csv(cor_matrix_L_rounded, file.path(SERIOUS_RESULTS_DIR, "eTable28_full_unweighted.csv"), row.names = TRUE)
       cat("✅ 已保存 eTable28_full_unweighted.csv (未加权版)\n")
     }
     # 保存样本量和缺失信息（移到if(length(existing_vars_L) >= 16)内部）
@@ -265,7 +271,7 @@ if(length(adult_idx_L) > 0) {
       Complete_Cases_N = sum(complete.cases(data_adult_L[, existing_vars_L])),
       Complete_Cases_Pct = round(100 * sum(complete.cases(data_adult_L[, existing_vars_L])) / nrow(data_adult_L), 1)
     )
-    write.csv(sample_size_L, file.path(RESULTS_DIR, "eTable28_sample_size.csv"), row.names = FALSE)
+    write.csv(sample_size_L, file.path(SERIOUS_RESULTS_DIR, "eTable28_sample_size.csv"), row.names = FALSE)
   } else {
     cat("⚠️ L周期成分变量不足\n")
   }
@@ -318,7 +324,7 @@ if(length(adult_idx_P) > 0) {
         rownames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
         colnames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
         # 保存完整版
-        write.csv(cor_matrix_P_rounded, file.path(RESULTS_DIR, "eTable29_full.csv"), row.names = TRUE)
+        write.csv(cor_matrix_P_rounded, file.path(SERIOUS_RESULTS_DIR, "eTable29_full.csv"), row.names = TRUE)
         cat("✅ 已保存 eTable29_full.csv (P周期加权版)\n")
         # 创建简洁版表格（用于补充材料）
         eTable29 <- as.data.frame(cor_matrix_P_rounded)
@@ -327,7 +333,7 @@ if(length(adult_idx_P) > 0) {
         })
         eTable29$Component <- rownames(eTable29)
         eTable29 <- eTable29[, c("Component", col_abbr[1:length(existing_vars_P)])]
-        write.csv(eTable29, file.path(RESULTS_DIR, "eTable29.csv"), row.names = FALSE)
+        write.csv(eTable29, file.path(SERIOUS_RESULTS_DIR, "eTable29.csv"), row.names = FALSE)
         cat("✅ 已保存 eTable29.csv (P周期加权简洁版)\n")
       } else {
         cat("⚠️ 完整案例不足100，使用未加权相关\n")
@@ -336,7 +342,7 @@ if(length(adult_idx_P) > 0) {
         cor_matrix_P_rounded <- round(cor_matrix_P, 2)
         rownames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
         colnames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
-        write.csv(cor_matrix_P_rounded, file.path(RESULTS_DIR, "eTable29_full_unweighted.csv"), row.names = TRUE)
+        write.csv(cor_matrix_P_rounded, file.path(SERIOUS_RESULTS_DIR, "eTable29_full_unweighted.csv"), row.names = TRUE)
         cat("✅ 已保存 eTable29_full_unweighted.csv (P周期未加权版)\n")
       }
     } else {
@@ -346,7 +352,7 @@ if(length(adult_idx_P) > 0) {
       cor_matrix_P_rounded <- round(cor_matrix_P, 2)
       rownames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
       colnames(cor_matrix_P_rounded) <- col_abbr[1:length(existing_vars_P)]
-      write.csv(cor_matrix_P_rounded, file.path(RESULTS_DIR, "eTable29_full_unweighted.csv"), row.names = TRUE)
+      write.csv(cor_matrix_P_rounded, file.path(SERIOUS_RESULTS_DIR, "eTable29_full_unweighted.csv"), row.names = TRUE)
       cat("✅ 已保存 eTable29_full_unweighted.csv (P周期未加权版)\n")
     }
     # 保存样本量和缺失信息（无论加权与否都保存）
@@ -356,7 +362,7 @@ if(length(adult_idx_P) > 0) {
       Complete_Cases_N = sum(complete.cases(data_adult_P[, existing_vars_P])),
       Complete_Cases_Pct = round(100 * sum(complete.cases(data_adult_P[, existing_vars_P])) / nrow(data_adult_P), 1)
     )
-    write.csv(sample_size_P, file.path(RESULTS_DIR, "eTable29_sample_size.csv"), row.names = FALSE)
+    write.csv(sample_size_P, file.path(SERIOUS_RESULTS_DIR, "eTable29_sample_size.csv"), row.names = FALSE)
   } else {
     cat("⚠️ P周期成分变量不足\n")
   }
@@ -448,7 +454,7 @@ if(exists("wss_L") && exists("wss_P") &&
   plot_lwd <- 2             # 线条粗细（加粗）
   plot_lwd.point <- 2.5     # 点的边框粗细
   # 创建两面板图形，每面板两个子图 - PDF版本
-  pdf(file.path(RESULTS_DIR, "eFigure4.pdf"), width = 14, height = 10)
+  pdf(file.path(SERIOUS_RESULTS_DIR, "eFigure4.pdf"), width = 14, height = 10)
   par(mfrow = c(2, 2), mar = c(5, 5, 4, 2) + 0.1)
   # L周期 - 肘部法则
   plot(1:6, wss_L, type = "b", pch = 19, frame = FALSE, lwd = plot_lwd,
@@ -501,11 +507,11 @@ if(exists("wss_L") && exists("wss_P") &&
     WSS = round(c(wss_L, wss_P), 2),
     Silhouette = round(c(sil_width_L, sil_width_P), 3)
   )
-  write.csv(elbow_data, file.path(RESULTS_DIR, "eFigure4_data.csv"), row.names = FALSE)
+  write.csv(elbow_data, file.path(SERIOUS_RESULTS_DIR, "eFigure4_data.csv"), row.names = FALSE)
   cat("✅ 已保存 eFigure4_data.csv\n")
   # 生成PNG版本 - 300 dpi
   cat("\n--- 生成 eFigure 4 PNG版本 ---\n")
-  png(file.path(RESULTS_DIR, "eFigure4.png"), 
+  png(file.path(SERIOUS_RESULTS_DIR, "eFigure4.png"), 
       width = 14, height = 10, units = "in", res = 300)
   par(mfrow = c(2, 2), mar = c(5, 5, 4, 2) + 0.1)
   # L周期 - 肘部法则
@@ -567,7 +573,7 @@ if(exists("wss_L") && exists("wss_P") &&
     "Data source: NHANES 2017-2020 and 2021-2023, restricted to non-pregnant adults aged ≥18 years.",
     "Analyses used unweighted data as clustering is not design-based."
   )
-  writeLines(caption_text, file.path(RESULTS_DIR, "eFigure4_caption.txt"))
+  writeLines(caption_text, file.path(SERIOUS_RESULTS_DIR, "eFigure4_caption.txt"))
 } else {
   cat("⚠️ 无法生成 eFigure4，缺少聚类数据\n")
 }
@@ -609,7 +615,7 @@ for(thresh in thresholds) {
 }
 cat("\n两个周期α₂阈值对比:\n")
 print(threshold_results)
-write.csv(threshold_results, file.path(RESULTS_DIR, "R1_threshold_comparison.csv"), row.names = FALSE)
+write.csv(threshold_results, file.path(SERIOUS_RESULTS_DIR, "R1_threshold_comparison.csv"), row.names = FALSE)
 # ============================================================================
 # 5.2 CART决策树自动寻找α₂最优切点
 # ============================================================================
@@ -652,14 +658,14 @@ if(!is.null(splits) && "alpha2" %in% rownames(splits)) {
   cat("cart_result类:", class(cart_result), "\n")
   cat("cart_result:\n")
   print(cart_result)
-  cat("写入路径:", file.path(RESULTS_DIR, "eTable32.csv"), "\n")
+  cat("写入路径:", file.path(SERIOUS_RESULTS_DIR, "eTable32.csv"), "\n")
   cat("目录存在:", dir.exists(RESULTS_DIR), "\n")
   # 写入文件
   cat("\n=== 写入 eTable32.csv ===\n")
-  cat("路径:", file.path(RESULTS_DIR, "eTable32.csv"), "\n")
+  cat("路径:", file.path(SERIOUS_RESULTS_DIR, "eTable32.csv"), "\n")
   cat("目录存在:", dir.exists(RESULTS_DIR), "\n")
-  write.csv(cart_result, file.path(RESULTS_DIR, "eTable32.csv"), row.names = FALSE)
-  cat("写入成功:", file.exists(file.path(RESULTS_DIR, "eTable32.csv")), "\n")
+  write.csv(cart_result, file.path(SERIOUS_RESULTS_DIR, "eTable32.csv"), row.names = FALSE)
+  cat("写入成功:", file.exists(file.path(SERIOUS_RESULTS_DIR, "eTable32.csv")), "\n")
 } else {
   cat("CART未找到α₂的有效分裂点\n")
   optimal_cut <- NA
@@ -709,7 +715,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
       }
     }
     if(nrow(hcf_changes) > 0) {
-      write.csv(hcf_changes, file.path(RESULTS_DIR, "R2_hcf_stratified.csv"), row.names = FALSE)
+      write.csv(hcf_changes, file.path(SERIOUS_RESULTS_DIR, "R2_hcf_stratified.csv"), row.names = FALSE)
       cat("✅ 已保存: R2_hcf_stratified.csv\n")
     }
     # 5.2 按年龄分层
@@ -738,7 +744,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
       }
     }
     if(nrow(age_changes) > 0) {
-      write.csv(age_changes, file.path(RESULTS_DIR, "R2_age_stratified.csv"), row.names = FALSE)
+      write.csv(age_changes, file.path(SERIOUS_RESULTS_DIR, "R2_age_stratified.csv"), row.names = FALSE)
       cat("✅ 已保存: R2_age_stratified.csv\n")
     }
     # 5.3 按性别分层
@@ -762,7 +768,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
       }
     }
     if(nrow(gender_changes) > 0) {
-      write.csv(gender_changes, file.path(RESULTS_DIR, "R2_gender_stratified.csv"), row.names = FALSE)
+      write.csv(gender_changes, file.path(SERIOUS_RESULTS_DIR, "R2_gender_stratified.csv"), row.names = FALSE)
       cat("✅ 已保存: R2_gender_stratified.csv\n")
     } else {
       cat("⚠️ 没有生成性别分层结果\n")
@@ -799,7 +805,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
       }
     }
     if(nrow(race_changes) > 0) {
-      write.csv(race_changes, file.path(RESULTS_DIR, "R2_race_stratified.csv"), row.names = FALSE)
+      write.csv(race_changes, file.path(SERIOUS_RESULTS_DIR, "R2_race_stratified.csv"), row.names = FALSE)
       cat("✅ 已保存: R2_race_stratified.csv\n")
     } else {
       cat("⚠️ 没有生成种族分层结果\n")
@@ -816,7 +822,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
         cycle_num = ifelse(cycle == "2017-2020", 0, 1)
       )
     mixed_model <- lm(DPQ090 ~ depression_sev * cycle_num + RIDAGEYR + RIAGENDR, data = mixed_data)
-    sink(file.path(RESULTS_DIR, "R2_mixed_model.txt"))
+    sink(file.path(SERIOUS_RESULTS_DIR, "R2_mixed_model.txt"))
     cat("混合效应模型结果（线性回归替代）\n")
     cat("================================\n\n")
     print(summary(mixed_model))
@@ -850,7 +856,7 @@ if("pathway_cluster" %in% names(data_L) && "pathway_cluster" %in% names(data_P))
         Change = mean(persev_L$suicide_def3, na.rm = TRUE) - mean(persev_P$suicide_def3, na.rm = TRUE)
       )
     )
-    write.csv(suicide_definitions, file.path(RESULTS_DIR, "R2_suicide_sensitivity.csv"), row.names = FALSE)
+    write.csv(suicide_definitions, file.path(SERIOUS_RESULTS_DIR, "R2_suicide_sensitivity.csv"), row.names = FALSE)
     cat("✅ 已保存: R2_suicide_sensitivity.csv\n")
   } else {
     cat("\n⚠️ 痴固着人群样本量不足\n")
@@ -995,7 +1001,7 @@ if(exists("hcf_changes") && nrow(hcf_changes) > 0) {
   }
 }
 # 保存森林图数据（供审稿人查看原始数值）
-write.csv(forest_data, file.path(RESULTS_DIR, "eFigure6_data.csv"), row.names = FALSE)
+write.csv(forest_data, file.path(SERIOUS_RESULTS_DIR, "eFigure6_data.csv"), row.names = FALSE)
 # 定义绘图顺序
 subgroup_order <- c(
   "Overall",
@@ -1016,7 +1022,7 @@ if(nrow(forest_data) > 0) {
     ) %>%
     arrange(Subgroup, Type)
   # PDF版本
-  pdf(file.path(RESULTS_DIR, "eFigure6.pdf"), width = 14, height = 12)
+  pdf(file.path(SERIOUS_RESULTS_DIR, "eFigure6.pdf"), width = 14, height = 12)
   p_forest <- ggplot(forest_data, aes(x = Estimate, y = Subgroup, color = Type)) +
     geom_vline(xintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
     geom_point(position = position_dodge(width = 0.7), size = 3.5) +
@@ -1052,7 +1058,7 @@ if(nrow(forest_data) > 0) {
   print(p_forest)
   dev.off()
   # PNG版本 - 300 dpi
-  png(file.path(RESULTS_DIR, "eFigure6.png"), width = 14, height = 12, units = "in", res = 300)
+  png(file.path(SERIOUS_RESULTS_DIR, "eFigure6.png"), width = 14, height = 12, units = "in", res = 300)
   print(p_forest)
   dev.off()
   cat("✅ 已生成高清版 eFigure6.pdf 和 eFigure6.png\n")
@@ -1070,7 +1076,7 @@ alpha_vars <- c("alpha1", "alpha2", "alpha3", "alpha4")
 alpha_cor <- cor(data_L[, alpha_vars], use = "pairwise.complete.obs")
 cat("\nα因子相关矩阵 (L周期):\n")
 print(round(alpha_cor, 3))
-write.csv(round(alpha_cor, 3), file.path(RESULTS_DIR, "R3_alpha_correlation.csv"), row.names = TRUE)
+write.csv(round(alpha_cor, 3), file.path(SERIOUS_RESULTS_DIR, "R3_alpha_correlation.csv"), row.names = TRUE)
 # ============================================================================
 # 6.2 探索性因子分析 (EFA) - 带数据清理
 # ============================================================================
@@ -1130,7 +1136,7 @@ if(length(existing_vars) >= 16) {
     loadings_df <- as.data.frame(unclass(efa_result$loadings))
     names(loadings_df) <- c("Factor1", "Factor2", "Factor3", "Factor4")
     loadings_df$Variable <- rownames(loadings_df)
-    write.csv(loadings_df, file.path(RESULTS_DIR, "R3_efa_loadings_full.csv"), row.names = FALSE)
+    write.csv(loadings_df, file.path(SERIOUS_RESULTS_DIR, "R3_efa_loadings_full.csv"), row.names = FALSE)
     cat("✅ 已保存完整载荷矩阵: R3_efa_loadings_full.csv\n")
     # 7. 方差解释比例
     var_explained <- as.data.frame(efa_result$Vaccounted)
@@ -1142,7 +1148,7 @@ if(length(existing_vars) >= 16) {
     etable30 <- loadings_df %>%
       mutate(across(starts_with("Factor"), ~ ifelse(abs(.) < 0.2, NA, round(., 3)))) %>%
       select(Variable, Factor1, Factor2, Factor3, Factor4)
-    write.csv(etable30, file.path(RESULTS_DIR, "eTable30_efa_loadings.csv"), row.names = FALSE)
+    write.csv(etable30, file.path(SERIOUS_RESULTS_DIR, "eTable30_efa_loadings.csv"), row.names = FALSE)
     cat("✅ 已保存eTable 30: eTable30_efa_loadings.csv\n")
   } else {
     cat("⚠️ 完整案例不足100，无法进行EFA\n")
@@ -1219,7 +1225,7 @@ fit_summary <- rbind(
 cat("\n测量不变性拟合指数:\n")
 print(fit_summary)
 # 保存结果
-write.csv(fit_summary, file.path(RESULTS_DIR, "eTable36.csv"), row.names = FALSE)
+write.csv(fit_summary, file.path(SERIOUS_RESULTS_DIR, "eTable36.csv"), row.names = FALSE)
 # 简单结论
 cat("\n结论:\n")
 if(!is.na(fit_summary$CFI[1])) {
@@ -1267,7 +1273,7 @@ for(var in vars_of_interest) {
 }
 cat("\nα₁相关性两周期对比:\n")
 print(cor_comparison)
-write.csv(cor_comparison, file.path(RESULTS_DIR, "R4_alpha1_cor_comparison.csv"), row.names = FALSE)
+write.csv(cor_comparison, file.path(SERIOUS_RESULTS_DIR, "R4_alpha1_cor_comparison.csv"), row.names = FALSE)
 cat("✅ 已保存: R4_alpha1_cor_comparison.csv\n")
 # 8.2 ANCOVA
 cat("\n--- 7.2 ANCOVA ---\n")
@@ -1287,7 +1293,7 @@ ancova_results <- data.frame(
   SE = ancova_summary$coefficients[, "Std. Error"],
   p_value = ancova_summary$coefficients[, "Pr(>|t|)"]
 )
-write.csv(ancova_results, file.path(RESULTS_DIR, "eTable34.csv"), row.names = FALSE)
+write.csv(ancova_results, file.path(SERIOUS_RESULTS_DIR, "eTable34.csv"), row.names = FALSE)
 cat("✅ 已保存: eTable34.csv\n")
 # ============================================================================
 # 9. α₂干预靶点证据（100% NHANES合规版）
@@ -1348,7 +1354,7 @@ balance_summary <- data.frame(
   Variable = names(smd_values),
   SMD = round(as.numeric(smd_values), 3)
 )
-write.csv(balance_summary, file.path(RESULTS_DIR, "R5_balance_smd.csv"), row.names = FALSE)
+write.csv(balance_summary, file.path(SERIOUS_RESULTS_DIR, "R5_balance_smd.csv"), row.names = FALSE)
 cat("✅ 已保存: R5_balance_smd.csv\n")
 # 8.2 加权倾向性评分匹配 (Weighted PSM) - 修正版：使用α₂阈值
 cat("\n--- 8.2 加权倾向性评分匹配 (Weighted PSM) - 阈值版 ---\n")
@@ -1430,7 +1436,7 @@ weighted_design <- svydesign(
 cat("\n加权PSM前后NNT对比（基于α₂ > -0.5阈值）:\n")
 print(nnt_comparison)
 # 保存结果
-write.csv(nnt_comparison, file.path(RESULTS_DIR, "eTable33.csv"), row.names = FALSE)
+write.csv(nnt_comparison, file.path(SERIOUS_RESULTS_DIR, "eTable33.csv"), row.names = FALSE)
 # ============================================================================
 # 10. 生成最终的eTables和eFigures
 # ============================================================================
@@ -1484,7 +1490,7 @@ p_or <- if(exists("threshold_results") && nrow(threshold_results) > 0) {
 # 从 cart_result 提取（第5.2节生成的）
 if(!exists("cart_result")) {
   # 如果不存在，尝试读取
-  cart_file <- file.path(RESULTS_DIR, "eTable32.csv")
+  cart_file <- file.path(SERIOUS_RESULTS_DIR, "eTable32.csv")
   if(file.exists(cart_file)) {
     cart_result <- read.csv(cart_file)
   } else {
@@ -1503,7 +1509,7 @@ cart_text <- paste0(round(cart_result$Optimal_Cutpoint[1], 2),
 # 从 nnt_comparison 提取（第8.2节生成的）
 if(!exists("nnt_comparison")) {
   # 尝试读取
-  nnt_file <- file.path(RESULTS_DIR, "eTable33.csv")
+  nnt_file <- file.path(SERIOUS_RESULTS_DIR, "eTable33.csv")
   if(file.exists(nnt_file)) {
     nnt_comparison <- read.csv(nnt_file)
   } else {
@@ -1520,7 +1526,7 @@ if(length(nnt_persev) == 0) nnt_persev <- "6"
 # 从 ancova_results 提取（第7.2节生成的）
 if(!exists("ancova_results")) {
   # 尝试读取
-  ancova_file <- file.path(RESULTS_DIR, "eTable34.csv")
+  ancova_file <- file.path(SERIOUS_RESULTS_DIR, "eTable34.csv")
   if(file.exists(ancova_file)) {
     ancova_results <- read.csv(ancova_file)
   } else {
@@ -1580,7 +1586,7 @@ etable35 <- data.frame(
   )
 )
 # 保存
-write.csv(etable35, file.path(RESULTS_DIR, "eTable35.csv"), row.names = FALSE)
+write.csv(etable35, file.path(SERIOUS_RESULTS_DIR, "eTable35.csv"), row.names = FALSE)
 cat("✅ 已生成 eTable35.csv\n")
 # 显示结果
 print(etable35)
@@ -1595,7 +1601,7 @@ if(!exists("alpha_cor")) {
   alpha_vars <- c("alpha1", "alpha2", "alpha3", "alpha4")
   alpha_cor <- cor(data_L[, alpha_vars], use = "pairwise.complete.obs")
 }
-pdf(file.path(RESULTS_DIR, "eFigure5.pdf"), width = 8, height = 6)
+pdf(file.path(SERIOUS_RESULTS_DIR, "eFigure5.pdf"), width = 8, height = 6)
 corrplot(alpha_cor, method = "color", type = "upper",
          tl.col = "black", tl.srt = 45,
          title = "eFigure 5. α Factor Correlation Matrix",
@@ -1603,7 +1609,7 @@ corrplot(alpha_cor, method = "color", type = "upper",
 dev.off()
 cat("✅ 已生成 eFigure5.pdf\n")
 # 同时保存PNG版本
-png(file.path(RESULTS_DIR, "eFigure5.png"), width = 800, height = 600, res = 100)
+png(file.path(SERIOUS_RESULTS_DIR, "eFigure5.png"), width = 800, height = 600, res = 100)
 corrplot(alpha_cor, method = "color", type = "upper",
          tl.col = "black", tl.srt = 45,
          title = "eFigure 5. α Factor Correlation Matrix",
@@ -1616,7 +1622,7 @@ cat("✅ 已生成 eFigure5.png\n")
 cat("\n========================================================\n")
 cat("9. 生成整合报告\n")
 cat("========================================================\n")
-sink(file.path(LOG_DIR, "21_serious_research_report.txt"))
+sink(file.path(LOGS_DIR, "21_serious_research_report.txt"))
 cat("==================\n\n")
 cat("分析时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
 cat("一、α₂阈值稳定性\n")
@@ -1649,7 +1655,7 @@ cat("\n✅ 整合报告已保存\n")
 # 11. 保存会话信息
 # ============================================================================
 cat("\n10. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "21_session_info.txt")
+session_info_path <- file.path(LOGS_DIR, "21_session_info.txt")
 sink(session_info_path)
 cat("严谨分析会话信息\n")
 cat("======================\n")
@@ -1673,5 +1679,5 @@ cat("结果已保存至:", RESULTS_DIR, "\n")
 cat("========================================================\n")
 sink()
 rm(list = setdiff(ls(), c("PROJECT_ROOT", "L_DATA_DIR", "P_DATA_DIR", 
-                          "RESULTS_DIR", "LOG_DIR")))
+                          "RESULTS_DIR", "LOGS_DIR")))
 gc()

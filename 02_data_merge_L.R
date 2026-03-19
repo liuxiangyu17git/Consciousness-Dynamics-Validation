@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 02_data_merge_L.R
 # 描述: NHANES 2021-2023 (L周期) 数据合并 - 完全符合CDC/NCHS教程要求
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,14 +33,13 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径（完全遵循您的原始路径）
-CLEANED_PATH <- "C:/NHANES_Data/CLEAN"
+CLEANED_PATH <- L_DATA_DIR
 MASTER_PATH <- file.path(CLEANED_PATH, "master.rds")
 LOG_PATH <- file.path(CLEANED_PATH, "merge_log.rds")
 # 创建日志目录
-LOG_DIR <- file.path(CLEANED_PATH, "logs")
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("02_merge_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("02_merge_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 02_data_merge_L.R\n")
@@ -376,7 +377,7 @@ cat("3. 保存数据集描述... ✅\n")
 # ============================================================================
 cat("\n步骤5: 生成最终报告\n")
 cat("===================\n")
-report_path <- file.path(LOG_DIR, "02_merge_report_L.txt")
+report_path <- file.path(LOGS_DIR, "02_merge_report_L.txt")
 sink(report_path)
 cat("NHANES数据合并完成报告\n")
 cat("=======================\n\n")
@@ -416,7 +417,7 @@ cat("✅ 最终报告已保存\n")
 # ============================================================================
 cat("\n步骤6: 保存会话信息\n")
 cat("===================\n")
-session_info_path <- file.path(LOG_DIR, "02_session_info_L.txt")
+session_info_path <- file.path(LOGS_DIR, "02_session_info_L.txt")
 sink(session_info_path)
 cat("NHANES数据合并会话信息\n")
 cat("=========================\n")
@@ -435,7 +436,7 @@ cat("✅ 会话信息已保存\n")
 # ============================================================================
 cat("\n步骤7: 保存R代码副本\n")
 cat("===================\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -452,5 +453,5 @@ cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEANED_PATH", "MASTER_PATH", "LOG_DIR")))
+rm(list = setdiff(ls(), c("CLEANED_PATH", "MASTER_PATH", "LOGS_DIR")))
 gc()

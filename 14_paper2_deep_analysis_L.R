@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER2_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 14_paper2_deep_analysis_L.R
 # 描述: NHANES 2021-2023 (L周期) 论文2深入分析 - 通路深化分析合集
@@ -18,7 +26,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -47,17 +54,16 @@ age_labels <- c(
   "60岁以上" = "60+"
 )
 # 配置路径（完全遵循您的原始路径）
-clean_dir <- "C:/NHANES_Data/CLEAN"
+clean_dir <- L_DATA_DIR
 results_dir <- file.path(clean_dir, "results", "paper2")
-LOG_DIR <- file.path(clean_dir, "logs")
 # 创建结果目录
 if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 if (!dir.exists(file.path(results_dir, "figures"))) {
   dir.create(file.path(results_dir, "figures"), recursive = TRUE)
 }
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("14_paper2_deep_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("14_paper2_deep_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 # ============================================================================
 # 2. 加载数据
@@ -470,7 +476,7 @@ if (!"se" %in% names(inflam_df)) {
 # 13. 保存会话信息
 # ============================================================================
 cat("\n13. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "14_session_info_L.txt")
+session_info_path <- file.path(LOGS_DIR, "14_session_info_L.txt")
 sink(session_info_path)
 cat("NHANES L周期论文2深入分析会话信息\n")
 cat("====================================\n")
@@ -488,7 +494,7 @@ cat(" ✅ 会话信息已保存\n")
 # 14. 保存R代码副本
 # ============================================================================
 cat("\n14. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -496,7 +502,7 @@ code_save_path <- file.path(scripts_dir, "14_paper2_deep_analysis_L.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "14_code_list_L.txt")
+code_list_path <- file.path(LOGS_DIR, "14_code_list_L.txt")
 cat("脚本名称: 14_paper2_deep_analysis_L.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)

@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 08_final_merge_L.R
 # 描述: NHANES 2021-2023 (L周期) 最终数据合并 - 阶段六
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,12 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径（完全遵循您的原始路径）
-clean_dir <- "C:/NHANES_Data/CLEAN"
-LOG_DIR <- file.path(clean_dir, "logs")
+clean_dir <- L_DATA_DIR
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("08_final_merge_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("08_final_merge_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 08_final_merge_L.R\n")
@@ -210,7 +211,7 @@ cat(" ✅ data_dictionary.rds 和 data_dictionary.csv\n")
 # 9. 生成合并报告
 # ============================================================================
 cat("\n8. 生成合并报告...\n")
-report_file <- file.path(LOG_DIR, "08_final_merge_report_L.txt")
+report_file <- file.path(LOGS_DIR, "08_final_merge_report_L.txt")
 sink(report_file)
 cat("最终数据合并报告\n")
 cat("================\n\n")
@@ -228,7 +229,7 @@ cat(" ✅ 合并报告已保存\n\n")
 # 10. 保存会话信息（期刊要求）
 # ============================================================================
 cat("9. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "08_session_info_L.txt")
+session_info_path <- file.path(LOGS_DIR, "08_session_info_L.txt")
 sink(session_info_path)
 cat("NHANES最终合并会话信息\n")
 cat("=========================\n")
@@ -246,7 +247,7 @@ cat(" ✅ 会话信息已保存\n")
 # 11. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n10. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -254,7 +255,7 @@ code_save_path <- file.path(scripts_dir, "08_final_merge_L.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "08_code_list_L.txt")
+code_list_path <- file.path(LOGS_DIR, "08_code_list_L.txt")
 cat("脚本名称: 08_final_merge_L.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -268,5 +269,5 @@ cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("clean_dir", "LOG_DIR", "final_data", "analysis_data")))
+rm(list = setdiff(ls(), c("clean_dir", "LOGS_DIR", "final_data", "analysis_data")))
 gc()

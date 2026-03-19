@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 04_variable_biomarker_L.R
 # 描述: NHANES 2021-2023 (L周期) 生物标志物构建 - 阶段二
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,12 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径（完全遵循您的原始路径）
-clean_dir <- "C:/NHANES_Data/CLEAN"
-LOG_DIR <- file.path(clean_dir, "logs")
+clean_dir <- L_DATA_DIR
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("04_biomarker_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("04_biomarker_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 04_variable_biomarker_L.R\n")
@@ -563,7 +564,7 @@ cat(" ✅ 方法学描述已保存\n\n")
 # 8. 保存会话信息（期刊要求）
 # ============================================================================
 cat("7. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "04_session_info_L.txt")
+session_info_path <- file.path(LOGS_DIR, "04_session_info_L.txt")
 sink(session_info_path)
 cat("NHANES生物标志物构建会话信息\n")
 cat("=========================\n")
@@ -581,7 +582,7 @@ cat(" ✅ 会话信息已保存\n")
 # 9. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n8. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -589,7 +590,7 @@ code_save_path <- file.path(scripts_dir, "04_variable_biomarker_L.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "04_code_list_L.txt")
+code_list_path <- file.path(LOGS_DIR, "04_code_list_L.txt")
 cat("脚本名称: 04_variable_biomarker_L.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -603,5 +604,5 @@ cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("clean_dir", "LOG_DIR")))
+rm(list = setdiff(ls(), c("clean_dir", "LOGS_DIR")))
 gc()

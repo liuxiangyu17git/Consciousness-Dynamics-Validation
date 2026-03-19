@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 01_data_cleaning_L.R
 # 描述: NHANES 2021-2023 (L周期) 数据清洗
@@ -42,15 +45,15 @@ cat("随机种子: 20240226\n\n")
 # 2. 配置路径和文件
 # ============================================================================
 cat("第二步：配置路径...\n")
-data_dir <- "C:/NHANES_Data"
-clean_dir <- "C:/NHANES_Data/CLEAN"
+data_dir <- RAW_DATA_DIR
+clean_dir <- L_DATA_DIR
 # 创建输出目录
 if (!dir.exists(clean_dir)) {
   dir.create(clean_dir, recursive = TRUE)
   cat("创建输出目录:", clean_dir, "\n")
 }
 # 创建日志目录
-log_dir <- file.path(clean_dir, "logs")
+log_dir <- LOGS_DIR
 if (!dir.exists(log_dir)) {
   dir.create(log_dir, recursive = TRUE)
   cat("创建日志目录:", log_dir, "\n")

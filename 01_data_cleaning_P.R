@@ -1,4 +1,15 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# ============================================================================
+# 配置路径（使用config.R中的变量）
+# ============================================================================
+data_dir <- RAW_DATA_DIR
+clean_dir <- P_DATA_DIR
+log_dir <- LOGS_DIR
+
+
 # ============================================================================
 # 脚本: 01_data_cleaning_P.R
 # 描述: NHANES 2017-2020 (P周期) 数据清洗 - 完全符合CDC/NCHS教程要求
@@ -25,7 +36,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必需包
@@ -37,17 +47,12 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-RAW_DATA_DIR <- PROJECT_ROOT                    # P周期原始xpt文件在 C:/NHANES_Data/
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")  # P周期清洗后文件保存在 2017-2020 目录下
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
 # 创建必要的目录
-if (!dir.exists(CLEAN_DATA_DIR)) dir.create(CLEAN_DATA_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(P_DATA_DIR)) dir.create(P_DATA_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 设置工作目录
-setwd(CLEAN_DATA_DIR)
 # 启动日志记录
-log_file <- file.path(LOG_DIR, paste0("01_cleaning_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("01_cleaning_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 01_data_cleaning_P.R\n")
@@ -613,7 +618,7 @@ for (i in seq_along(files_to_clean)) {
     design_present <- all(design_vars %in% names(df_clean))
     # 6.7 保存为RDS - 保存到CLEAN_P目录
     output_file <- gsub("\\.xpt$", "_clean.rds", file)
-    output_path <- file.path(CLEAN_DATA_DIR, output_file)
+    output_path <- file.path(P_DATA_DIR, output_file)
     saveRDS(df_clean, file = output_path)
     cat(sprintf("  已保存: %s\n", output_path))
     # 6.8 记录处理状态
@@ -665,7 +670,7 @@ if (success_count == length(files_to_clean)) {
 }
 # 7.3 验证DEMO文件的设计变量
 cat("\n验证DEMO文件设计变量:\n")
-demo_path <- file.path(CLEAN_DATA_DIR, "P_DEMO_clean.rds")
+demo_path <- file.path(P_DATA_DIR, "P_DEMO_clean.rds")
 if (file.exists(demo_path)) {
   demo_data <- readRDS(demo_path)
   if (all(c("SDMVPSU", "SDMVSTRA") %in% names(demo_data))) {
@@ -693,7 +698,7 @@ if (file.exists(demo_path)) {
 # 8. 生成清洗报告
 # ============================================================================
 cat("\n步骤5: 生成清洗报告...\n")
-report_file <- file.path(LOG_DIR, "01_cleaning_report_P.txt")
+report_file <- file.path(LOGS_DIR, "01_cleaning_report_P.txt")
 sink(report_file)
 cat("NHANES 2017-2020 (P周期) 数据清洗报告\n")
 cat("========================================\n")
@@ -712,20 +717,20 @@ cat("✅ 专业清洗: 处理P周期变量名差异\n\n")
 cat("输出文件清单:\n")
 for (file in files_to_clean) {
   output_file <- gsub("\\.xpt$", "_clean.rds", file)
-  cat(sprintf("  - %s\n", file.path(CLEAN_DATA_DIR, output_file)))
+  cat(sprintf("  - %s\n", file.path(P_DATA_DIR, output_file)))
 }
 sink()
 cat(sprintf("清洗报告已保存: %s\n", report_file))
 # ============================================================================
 # 9. 保存处理日志
 # ============================================================================
-log_csv_path <- file.path(LOG_DIR, "01_cleaning_log_P.csv")
+log_csv_path <- file.path(LOGS_DIR, "01_cleaning_log_P.csv")
 write.csv(processing_log, log_csv_path, row.names = FALSE)
 cat(sprintf("处理日志已保存: %s\n", log_csv_path))
 # ============================================================================
 # 10. 保存会话信息
 # ============================================================================
-session_info_path <- file.path(LOG_DIR, "01_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "01_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES 2017-2020 (P周期) 清洗会话信息\n")
 cat("========================================\n")
@@ -737,7 +742,7 @@ cat(sprintf("会话信息已保存: %s\n", session_info_path))
 # 11. 保存R代码副本
 # ============================================================================
 cat("\n步骤6: 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -745,7 +750,7 @@ code_save_path <- file.path(scripts_dir, "01_data_cleaning_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "01_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "01_code_list_P.txt")
 cat("脚本名称: 01_data_cleaning_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -756,9 +761,9 @@ cat(" ✅ 代码清单已保存\n")
 cat("\n========================================================\n")
 cat("✅ P周期清洗完成！\n")
 cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
-cat("输出目录:", CLEAN_DATA_DIR, "\n")
+cat("输出目录:", P_DATA_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "LOG_DIR", "processing_log")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "LOGS_DIR", "processing_log")))
 gc()

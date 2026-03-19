@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 03_variable_basic_P.R
 # 描述: NHANES 2017-2020 (P周期) 基础变量构建 - 阶段一
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,13 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")  # P周期清洗后文件目录
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("03_variable_basic_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("03_variable_basic_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 03_variable_basic_P.R\n")
@@ -52,12 +52,12 @@ for (pkg in required_packages) {
   cat(sprintf("  %s: %s\n", pkg, packageVersion(pkg)))
 }
 cat("\n")
-cat("输出路径:", CLEAN_DATA_DIR, "\n\n")
+cat("输出路径:", P_DATA_DIR, "\n\n")
 # ============================================================================
 # 2. 加载数据
 # ============================================================================
 cat("1. 加载master_P.rds...\n")
-master_file <- file.path(CLEAN_DATA_DIR, "master_P.rds")
+master_file <- file.path(P_DATA_DIR, "master_P.rds")
 if(!file.exists(master_file)) {
   stop("错误: master_P.rds不存在! 请先运行02_data_merge_P.R")
 }
@@ -162,7 +162,7 @@ for(i in 1:nrow(data)) {
 behavior_data$sdmvpsu <- if("SDMVPSU" %in% names(data)) data$SDMVPSU else 1
 behavior_data$sdmvstra <- if("SDMVSTRA" %in% names(data)) data$SDMVSTRA else 1
 behavior_data$WTMECPRP <- ifelse(!is.na(data$WTMECPRP) & data$WTMECPRP > 0, data$WTMECPRP, NA)
-saveRDS(behavior_data, file.path(CLEAN_DATA_DIR, "behavior_vars_P.rds"))
+saveRDS(behavior_data, file.path(P_DATA_DIR, "behavior_vars_P.rds"))
 cat(sprintf(" ✅ 已保存: behavior_vars_P.rds (%d个变量)\n", ncol(behavior_data)))
 # ============================================================================
 # 6. clinical_vars_P.rds（临床诊断变量）- 完全遵循详表
@@ -337,7 +337,7 @@ for(i in 1:nrow(data)) {
 clinical_data$sdmvpsu <- behavior_data$sdmvpsu
 clinical_data$sdmvstra <- behavior_data$sdmvstra
 clinical_data$WTMECPRP <- behavior_data$WTMECPRP
-saveRDS(clinical_data, file.path(CLEAN_DATA_DIR, "clinical_vars_P.rds"))
+saveRDS(clinical_data, file.path(P_DATA_DIR, "clinical_vars_P.rds"))
 cat(sprintf(" ✅ 已保存: clinical_vars_P.rds (%d个变量)\n", ncol(clinical_data)))
 # ============================================================================
 # 7. social_vars_P.rds（社会决定因素）
@@ -417,7 +417,7 @@ if("WTINTPRP" %in% names(data)) {
   social_data$WTINTPRP <- NA
   warning("WTINTPRP不存在于原始数据中")
 }
-saveRDS(social_data, file.path(CLEAN_DATA_DIR, "social_vars_P.rds"))
+saveRDS(social_data, file.path(P_DATA_DIR, "social_vars_P.rds"))
 cat(sprintf(" ✅ 已保存: social_vars_P.rds (%d个变量)\n", ncol(social_data)))
 # ============================================================================
 # 8. symptom_vars_P.rds（症状与功能）
@@ -469,7 +469,7 @@ if("WTINTPRP" %in% names(data)) {
 } else {
   symptom_data$WTINTPRP <- NA
 }
-saveRDS(symptom_data, file.path(CLEAN_DATA_DIR, "symptom_vars_P.rds"))
+saveRDS(symptom_data, file.path(P_DATA_DIR, "symptom_vars_P.rds"))
 cat(sprintf(" ✅ 已保存: symptom_vars_P.rds (%d个变量)\n", ncol(symptom_data)))
 # ============================================================================
 # 9. dietbehavior_vars_P.rds（饮食行为变量）
@@ -530,7 +530,7 @@ if("WTDRD1" %in% names(data)) {
 if("WTDR2D" %in% names(data)) {
   diet_data$wtdr2d <- ifelse(!is.na(data$WTDR2D) & data$WTDR2D > 0, data$WTDR2D, NA)
 }
-saveRDS(diet_data, file.path(CLEAN_DATA_DIR, "dietbehavior_vars_P.rds"))
+saveRDS(diet_data, file.path(P_DATA_DIR, "dietbehavior_vars_P.rds"))
 cat(sprintf(" ✅ 已保存: dietbehavior_vars_P.rds (%d个变量)\n", ncol(diet_data)))
 # ============================================================================
 # 10. healthbehavior_vars_P.rds（健康行为达标变量）- 修正版
@@ -655,7 +655,7 @@ cat(sprintf("    - wtmecprp: 有效样本 %d\n", n_wt))
 # ============================================================================
 # 保存文件
 # ============================================================================
-saveRDS(health_data, file.path(CLEAN_DATA_DIR, "healthbehavior_vars_P.rds"))
+saveRDS(health_data, file.path(P_DATA_DIR, "healthbehavior_vars_P.rds"))
 cat(sprintf("\n ✅ 已保存: healthbehavior_vars_P.rds (%d个变量)\n", ncol(health_data)))
 # ============================================================================
 # 11. 创建多个调查设计对象（最小公分母原则）
@@ -769,7 +769,7 @@ if(nrow(interview_valid) > 0) {
     nest = TRUE,
     single.psu = "average"
   )
-  saveRDS(design_objects$interview, file.path(CLEAN_DATA_DIR, "interview_design_P.rds"))
+  saveRDS(design_objects$interview, file.path(P_DATA_DIR, "interview_design_P.rds"))
   cat(" ✅ 已保存: interview_design_P.rds\n")
 }
 # MEC权重设计对象
@@ -787,7 +787,7 @@ if(nrow(mec_valid) > 0) {
     nest = TRUE,
     single.psu = "average"
   )
-  saveRDS(design_objects$mec, file.path(CLEAN_DATA_DIR, "mec_design_P.rds"))
+  saveRDS(design_objects$mec, file.path(P_DATA_DIR, "mec_design_P.rds"))
   cat(" ✅ 已保存: mec_design_P.rds\n")
 }
 # 膳食权重设计对象
@@ -805,7 +805,7 @@ if(nrow(diet_valid) > 0) {
     nest = TRUE,
     single.psu = "average"
   )
-  saveRDS(design_objects$diet, file.path(CLEAN_DATA_DIR, "diet_design_P.rds"))
+  saveRDS(design_objects$diet, file.path(P_DATA_DIR, "diet_design_P.rds"))
   cat(" ✅ 已保存: diet_design_P.rds\n")
 }
 cat("\n ✅ 5.2完成：创建了", length(design_objects), "个设计对象\n")
@@ -814,26 +814,26 @@ cat("\n5.3 创建子组分析设计对象...\n")
 if(!is.null(design_objects$interview)) {
   if("is_adult" %in% names(design_objects$interview$variables)) {
     adult_interview <- subset(design_objects$interview, is_adult == 1)
-    saveRDS(adult_interview, file.path(CLEAN_DATA_DIR, "adult_interview_design_P.rds"))
+    saveRDS(adult_interview, file.path(P_DATA_DIR, "adult_interview_design_P.rds"))
     cat(" ✅ 已保存: adult_interview_design_P.rds\n")
   }
 }
 if(!is.null(design_objects$mec)) {
   if("is_adult" %in% names(design_objects$mec$variables)) {
     adult_mec <- subset(design_objects$mec, is_adult == 1)
-    saveRDS(adult_mec, file.path(CLEAN_DATA_DIR, "adult_mec_design_P.rds"))
+    saveRDS(adult_mec, file.path(P_DATA_DIR, "adult_mec_design_P.rds"))
     cat(" ✅ 已保存: adult_mec_design_P.rds\n")
   }
   if("is_non_pregnant_adult" %in% names(design_objects$mec$variables)) {
     non_preg_mec <- subset(design_objects$mec, is_non_pregnant_adult == 1)
-    saveRDS(non_preg_mec, file.path(CLEAN_DATA_DIR, "non_pregnant_adult_mec_design_P.rds"))
+    saveRDS(non_preg_mec, file.path(P_DATA_DIR, "non_pregnant_adult_mec_design_P.rds"))
     cat(" ✅ 已保存: non_pregnant_adult_mec_design_P.rds\n")
   }
 }
 if(!is.null(design_objects$diet)) {
   if("is_adult" %in% names(design_objects$diet$variables)) {
     adult_diet <- subset(design_objects$diet, is_adult == 1)
-    saveRDS(adult_diet, file.path(CLEAN_DATA_DIR, "adult_diet_design_P.rds"))
+    saveRDS(adult_diet, file.path(P_DATA_DIR, "adult_diet_design_P.rds"))
     cat(" ✅ 已保存: adult_diet_design_P.rds\n")
   }
 }
@@ -855,13 +855,13 @@ design_index <- list(
     adult = "adult_diet_design_P.rds"
   )
 )
-saveRDS(design_index, file.path(CLEAN_DATA_DIR, "design_index_P.rds"))
+saveRDS(design_index, file.path(P_DATA_DIR, "design_index_P.rds"))
 cat(" ✅ 已保存: design_index_P.rds\n")
 # ============================================================================
 # 12. 生成合规报告
 # ============================================================================
 cat("\n6. 生成NHANES教程合规报告...\n")
-report_file <- file.path(LOG_DIR, "03_variable_basic_report_P.txt")
+report_file <- file.path(LOGS_DIR, "03_variable_basic_report_P.txt")
 sink(report_file)
 cat("NHANES P周期基础变量构建 - 完全合规报告\n")
 cat("==========================================\n\n")
@@ -886,7 +886,7 @@ cat(" ✅ 合规报告已保存\n")
 # 13. 保存会话信息（期刊要求）
 # ============================================================================
 cat("\n7. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "03_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "03_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期基础变量构建会话信息\n")
 cat("==================================\n")
@@ -904,7 +904,7 @@ cat(" ✅ 会话信息已保存\n")
 # 14. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n8. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -912,7 +912,7 @@ code_save_path <- file.path(scripts_dir, "03_variable_basic_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "03_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "03_code_list_P.txt")
 cat("脚本名称: 03_variable_basic_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -923,9 +923,9 @@ cat(" ✅ 代码清单已保存\n")
 cat("\n========================================================\n")
 cat("✅ P周期基础变量构建完成！\n")
 cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
-cat("输出目录:", CLEAN_DATA_DIR, "\n")
+cat("输出目录:", P_DATA_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "LOGS_DIR")))
 gc()

@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- LONGITUDINAL_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 18_longitudinal_analysis_PL.R
 # 描述: NHANES 2017-2020 (P周期) vs 2021-2023 (L周期) 纵向分析
@@ -7,7 +15,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必要包
@@ -63,15 +70,13 @@ time_window_labels <- c(
 # ============================================================================
 # 2. 配置路径
 # ============================================================================
-L_DATA_DIR <- "C:/NHANES_Data/CLEAN"
-P_DATA_DIR <- "C:/NHANES_Data/2017-2020"
-RESULTS_DIR <- "C:/NHANES_Data/CLEAN/results/longitudinal"
-LOG_DIR <- "C:/NHANES_Data/CLEAN/logs"
+L_DATA_DIR <- L_DATA_DIR
+P_DATA_DIR <- P_DATA_DIR
 # 创建结果目录
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志
-log_file <- file.path(LOG_DIR, paste0("18_longitudinal_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("18_longitudinal_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 18_longitudinal_analysis_PL.R\n")
@@ -459,7 +464,7 @@ cat("✅ 已保存: 06_time_window_sensitivity.csv\n")
 cat("\n========================================================\n")
 cat("8. 生成整合报告\n")
 cat("========================================================\n")
-sink(file.path(LOG_DIR, "18_longitudinal_report.txt"))
+sink(file.path(LOGS_DIR, "18_longitudinal_report.txt"))
 cat("纵向分析整合报告\n")
 cat("================\n\n")
 cat("分析时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n")
@@ -490,7 +495,7 @@ cat("\n✅ 整合报告已保存\n")
 # 11. 保存会话信息
 # ============================================================================
 cat("\n9. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "18_session_info.txt")
+session_info_path <- file.path(LOGS_DIR, "18_session_info.txt")
 sink(session_info_path)
 cat("纵向分析会话信息\n")
 cat("================\n")
@@ -508,7 +513,7 @@ cat(" ✅ 会话信息已保存\n")
 # 12. 保存R代码副本
 # ============================================================================
 cat("\n10. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -516,7 +521,7 @@ code_save_path <- file.path(scripts_dir, "18_longitudinal_analysis_PL.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "18_code_list.txt")
+code_list_path <- file.path(LOGS_DIR, "18_code_list.txt")
 cat("脚本名称: 18_longitudinal_analysis_PL.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -525,7 +530,7 @@ cat(" ✅ 代码清单已保存\n")
 # 13. 清理临时变量
 # ============================================================================
 cat("\n11. 清理临时变量...\n")
-rm(list = setdiff(ls(), c("L_DATA_DIR", "P_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("L_DATA_DIR", "P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()
 # ============================================================================
 # 14. 完成

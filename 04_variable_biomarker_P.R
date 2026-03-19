@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 04_variable_biomarker_P.R
 # 描述: NHANES 2017-2020 (P周期) 生物标志物构建 - 阶段二
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,13 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")  # P周期清洗后文件目录
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("04_biomarker_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("04_biomarker_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 04_variable_biomarker_P.R\n")
@@ -56,7 +56,7 @@ cat("\n")
 # 2. 数据加载和验证
 # ============================================================================
 cat("1. 加载主数据集并验证完整性...\n")
-master_file <- file.path(CLEAN_DATA_DIR, "master_P.rds")
+master_file <- file.path(P_DATA_DIR, "master_P.rds")
 if(!file.exists(master_file)) {
   stop("❌ 错误：master_P.rds不存在！请先运行03_variable_basic_P.R")
 }
@@ -565,8 +565,8 @@ core_vars <- c(
 existing_core <- core_vars[core_vars %in% names(data)]
 analysis_data_core <- data[, existing_core]
 # 保存文件 - 使用 _P 后缀
-saveRDS(analysis_data_full, file.path(CLEAN_DATA_DIR, "02_biomarker_full_P.rds"))
-saveRDS(analysis_data_core, file.path(CLEAN_DATA_DIR, "02_biomarker_core_P.rds"))
+saveRDS(analysis_data_full, file.path(P_DATA_DIR, "02_biomarker_full_P.rds"))
+saveRDS(analysis_data_core, file.path(P_DATA_DIR, "02_biomarker_core_P.rds"))
 cat(sprintf(" ✅ 完整版已保存: 02_biomarker_full_P.rds (%d个变量)\n", ncol(analysis_data_full)))
 cat(sprintf(" ✅ 核心版已保存: 02_biomarker_core_P.rds (%d个变量)\n", ncol(analysis_data_core)))
 # 生成版本说明
@@ -577,7 +577,7 @@ version_note <- data.frame(
   适用场景 = c("敏感性分析/扩展研究/后备论文", "三篇论文主分析"),
   强制规范 = c("❌ 非主分析使用", "✅ 主分析必须使用")
 )
-write.csv(version_note, file.path(CLEAN_DATA_DIR, "02_biomarker_version_control_P.csv"), row.names = FALSE)
+write.csv(version_note, file.path(P_DATA_DIR, "02_biomarker_version_control_P.csv"), row.names = FALSE)
 cat(" ✅ 版本说明已保存: 02_biomarker_version_control_P.csv\n\n")
 # ============================================================================
 # 6. 数据质量评估
@@ -606,7 +606,7 @@ cat("\n")
 # 7. 生成方法学描述文件
 # ============================================================================
 cat("6. 生成投稿材料...\n")
-methods_file <- file.path(CLEAN_DATA_DIR, "methods_description_nhanes_P.txt")
+methods_file <- file.path(P_DATA_DIR, "methods_description_nhanes_P.txt")
 sink(methods_file)
 cat("NHANES数据分析方法（P周期 - 2017-2020）\n")
 cat("=============================================\n\n")
@@ -633,7 +633,7 @@ cat(" ✅ 方法学描述已保存\n\n")
 # 8. 保存会话信息（期刊要求）
 # ============================================================================
 cat("7. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "04_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "04_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期生物标志物构建会话信息\n")
 cat("====================================\n")
@@ -651,7 +651,7 @@ cat(" ✅ 会话信息已保存\n")
 # 9. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n8. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -659,7 +659,7 @@ code_save_path <- file.path(scripts_dir, "04_variable_biomarker_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "04_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "04_code_list_P.txt")
 cat("脚本名称: 04_variable_biomarker_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -670,9 +670,9 @@ cat(" ✅ 代码清单已保存\n")
 cat("\n========================================================\n")
 cat("✅ P周期生物标志物构建完成！\n")
 cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
-cat("输出目录:", CLEAN_DATA_DIR, "\n")
+cat("输出目录:", P_DATA_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "LOGS_DIR")))
 gc()

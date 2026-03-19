@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER2_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 13_paper2_supplement_L.R
 # 描述: NHANES 2021-2023 (L周期) 论文2补充分析
@@ -18,7 +26,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -48,8 +55,8 @@ pathway_labels <- c(
   "低过激健康型" = "Low-hyperactivation",
   "对抗-枯竭混合型" = "Aversion-Exhaustion",
   "痴固着主导型" = "Perseveration",
-  "纯生理过激型" = "Hyperactivation"
-)
+  "纯生理过激型" = "Hyperactivation")
+PAPER2_RESULTS_DIR <- file.path(L_DATA_DIR, "results", "paper2")
 # 通路数字到英文的映射（用于系数提取）
 pathway_number_labels <- c(
   "2" = "Aversion-Exhaustion",
@@ -67,13 +74,12 @@ alpha_labels <- c(
 # ============================================================================
 # 2. 配置路径
 # ============================================================================
-clean_dir <- "C:/NHANES_Data/CLEAN"
+clean_dir <- L_DATA_DIR
 results_dir <- file.path(clean_dir, "results", "paper2")
-LOG_DIR <- file.path(clean_dir, "logs")
 if (!dir.exists(results_dir)) dir.create(results_dir, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("13_paper2_supp_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("13_paper2_supp_L_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 13_paper2_supplement_L.R\n")
@@ -299,9 +305,8 @@ cat("\n========================================================\n")
 cat("整合 table2 (L周期)：四通路特征完整表\n")
 cat("========================================================\n")
 # 设置路径
-L_DATA_DIR <- "C:/NHANES_Data/CLEAN"
-RESULTS_DIR <- file.path(L_DATA_DIR, "results")
-PAPER2_DIR <- file.path(RESULTS_DIR, "paper2")
+L_DATA_DIR <- L_DATA_DIR
+PAPER2_RESULTS_DIR <- file.path(L_DATA_DIR, "results", "paper2")
 # ============================================================================
 # 1. 读取 Part A：四通路维度得分
 # ============================================================================
@@ -320,7 +325,7 @@ print(partA)
 # 2. 读取 Part B：人口学特征
 # ============================================================================
 cat("\n2. 读取人口学特征...\n")
-partB_file <- file.path(PAPER2_DIR, "table1.csv")
+partB_file <- file.path(file.path(L_DATA_DIR, "results", "paper2"), "table1.csv")
 if(!file.exists(partB_file)) stop("❌ 找不到 table1.csv")
 partB_raw <- read.csv(partB_file, check.names = FALSE)
 partB <- data.frame(
@@ -343,7 +348,7 @@ print(partB)
 # 3. 读取 Part C：α因子分布
 # ============================================================================
 cat("\n3. 读取α因子分布...\n")
-partC_file <- file.path(PAPER2_DIR, "table_S2_alpha_by_cluster.csv")
+partC_file <- file.path(L_DATA_DIR, "results", "paper2", "table_S2_alpha_by_cluster.csv")
 if(!file.exists(partC_file)) stop("❌ 找不到α因子分布文件")
 partC <- read.csv(partC_file)
 partC$Pathway <- c("Low-hyperactivation Healthy", "Aversion-Exhaustion", 
@@ -373,7 +378,7 @@ table2_final[num_cols] <- lapply(table2_final[num_cols], function(x) round(as.nu
 # ============================================================================
 # 5. 保存
 # ============================================================================
-output_file <- file.path(PAPER2_DIR, "Table2_L_complete.csv")
+output_file <- file.path(file.path(L_DATA_DIR, "results", "paper2"), "Table2_L_complete.csv")
 write.csv(table2_final, output_file, row.names = FALSE)
 cat("\n✅ table2 (L周期) 整合完成！\n")
 cat("   文件保存至:", output_file, "\n")
@@ -642,7 +647,7 @@ print(pathway_interpretation)
 cat("\n========================================================\n")
 cat("生成分析报告\n")
 cat("========================================================\n")
-report_file <- file.path(LOG_DIR, "13_paper2_supp_report_L.txt")
+report_file <- file.path(LOGS_DIR, "13_paper2_supp_report_L.txt")
 sink(report_file)
 cat("Paper 2 Supplemental Analysis Results\n")
 cat("=====================================\n\n")
@@ -685,7 +690,7 @@ cat(" ✅ 分析报告已生成\n\n")
 # 12. 保存会话信息（期刊要求）
 # ============================================================================
 cat("3. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "13_session_info_L.txt")
+session_info_path <- file.path(LOGS_DIR, "13_session_info_L.txt")
 sink(session_info_path)
 cat("NHANES Paper 2 Supplemental Analysis Session Information\n")
 cat("========================================================\n")
@@ -703,7 +708,7 @@ cat(" ✅ 会话信息已保存\n")
 # 13. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n4. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -711,7 +716,7 @@ code_save_path <- file.path(scripts_dir, "13_paper2_supplement_L.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "13_code_list_L.txt")
+code_list_path <- file.path(LOGS_DIR, "13_code_list_L.txt")
 cat("脚本名称: 13_paper2_supplement_L.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -726,5 +731,5 @@ cat("Results saved to:", results_dir, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("clean_dir", "results_dir", "LOG_DIR")))
+rm(list = setdiff(ls(), c("clean_dir", "results_dir", "LOGS_DIR")))
 gc()

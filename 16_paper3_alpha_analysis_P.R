@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER3_RESULTS_P_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 16_paper3_alpha_analysis_P.R
 # 描述: NHANES 2017-2020 (P周期) 论文3 - α因子正式分析
@@ -20,7 +28,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -84,15 +91,12 @@ disease_labels <- c(
 # ============================================================================
 # 2. 配置路径 - P周期独立目录
 # ============================================================================
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")
-RESULTS_DIR <- file.path(CLEAN_DATA_DIR, "results", "paper3")
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建结果目录
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录
-log_file <- file.path(LOG_DIR, paste0("16_paper3_alpha_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("16_paper3_alpha_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 16_paper3_alpha_analysis_P.R\n")
@@ -111,7 +115,7 @@ cat("\n")
 # 3. 加载数据
 # ============================================================================
 cat("1. 加载数据...\n")
-data_file <- file.path(CLEAN_DATA_DIR, "analysis_dataset_subset_P.rds")
+data_file <- file.path(P_DATA_DIR, "analysis_dataset_subset_P.rds")
 if(!file.exists(data_file)) {
   stop("错误: analysis_dataset_subset_P.rds 不存在! 请先运行08_final_merge_P.R")
 }
@@ -812,7 +816,7 @@ if("HCF_type" %in% names(data)) {
 cat("\n========================================================\n")
 cat("13. 生成Figure 2 - 四通路α因子分布图\n")
 cat("========================================================\n")
-paper2_results_dir <- file.path(CLEAN_DATA_DIR, "results", "paper2")
+paper2_results_dir <- file.path(P_DATA_DIR, "results", "paper2")
 alpha_pathway_file <- file.path(paper2_results_dir, "table_S2_alpha_by_cluster_P.csv")
 if(file.exists(alpha_pathway_file)) {
   alpha_pathway_data <- read.csv(alpha_pathway_file)
@@ -1001,7 +1005,7 @@ cat(" ✅ Figure 4 PDF saved: Figure4_P.pdf\n")
 cat("\n========================================================\n")
 cat("15. 生成分析报告\n")
 cat("========================================================\n")
-report_file <- file.path(LOG_DIR, "16_paper3_report_P.txt")
+report_file <- file.path(LOGS_DIR, "16_paper3_report_P.txt")
 sink(report_file)
 cat("Alpha Factor Analysis Report (P Cycle)\n")
 cat("=====================================\n\n")
@@ -1031,7 +1035,7 @@ cat(" ✅ 分析报告已保存\n\n")
 # 18. 保存会话信息
 # ============================================================================
 cat("16. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "16_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "16_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES Paper 3 Alpha Factor Analysis Session Information (P Cycle)\n")
 cat("=================================================================\n")
@@ -1049,7 +1053,7 @@ cat(" ✅ 会话信息已保存\n")
 # 19. 保存R代码副本
 # ============================================================================
 cat("\n17. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -1057,7 +1061,7 @@ code_save_path <- file.path(scripts_dir, "16_paper3_alpha_analysis_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "16_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "16_code_list_P.txt")
 cat("脚本名称: 16_paper3_alpha_analysis_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -1066,7 +1070,7 @@ cat(" ✅ 代码清单已保存\n")
 # 20. 清理临时变量
 # ============================================================================
 cat("\n18. 清理临时变量...\n")
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()
 # ============================================================================
 # 21. 完成

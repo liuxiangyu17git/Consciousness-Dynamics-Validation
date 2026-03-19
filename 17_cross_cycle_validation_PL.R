@@ -1,4 +1,15 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- CROSS_CYCLE_RESULTS_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
+# 结果保存目录
+
+
 # ============================================================================
 # 脚本: 17_cross_cycle_validation.R
 # 描述: NHANES 2017-2020 (PCycle) vs 2021-2023 (LCycle) 跨Cycle验证
@@ -18,7 +29,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必要包
@@ -30,15 +40,13 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径
-L_DATA_DIR <- "C:/NHANES_Data/CLEAN"
-P_DATA_DIR <- "C:/NHANES_Data/2017-2020"
-RESULTS_DIR <- "C:/NHANES_Data/CLEAN/results"
-LOG_DIR <- "C:/NHANES_Data/CLEAN/logs"
+L_DATA_DIR <- L_DATA_DIR
+P_DATA_DIR <- P_DATA_DIR
 # 创建结果目录
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志
-log_file <- file.path(LOG_DIR, paste0("17_cross_cycle_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("17_cross_cycle_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 17_cross_cycle_validation.R\n")
@@ -241,7 +249,7 @@ table_S5 <- data.frame(
   )
 )
 # 保存CSV
-write.csv(table_S5, file.path(RESULTS_DIR, "Table5.csv"), row.names = FALSE)
+write.csv(table_S5, file.path(RESULTS_DIR, "eTable39.csv"), row.names = FALSE)
 cat(" ✅ Table S5 saved: Table5.csv\n\n")
 # ============================================================================
 # 生成Figure 5：跨周期对比图（直接从Table 5读取）
@@ -314,7 +322,7 @@ ggsave(file.path(RESULTS_DIR, "Figure5.png"), p_figure5, width = 12, height = 6,
 # 10. 生成验证报告
 # ============================================================================
 cat("\n9. 生成验证报告...\n")
-report_file <- file.path(LOG_DIR, "17_cross_cycle_report.txt")
+report_file <- file.path(LOGS_DIR, "17_cross_cycle_report.txt")
 sink(report_file)
 cat("跨Cycle验证报告\n")
 cat("==============\n\n")
@@ -337,7 +345,7 @@ cat(" ✅ 验证报告已保存\n\n")
 # 11. 保存会话信息
 # ============================================================================
 cat("10. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "17_session_info.txt")
+session_info_path <- file.path(LOGS_DIR, "17_session_info.txt")
 sink(session_info_path)
 cat("跨Cycle验证会话信息\n")
 cat("==================\n")
@@ -355,7 +363,7 @@ cat(" ✅ 会话信息已保存\n\n")
 # 12. 保存R代码副本
 # ============================================================================
 cat("11. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -363,7 +371,7 @@ code_save_path <- file.path(scripts_dir, "17_cross_cycle_validation.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "17_code_list.txt")
+code_list_path <- file.path(LOGS_DIR, "17_code_list.txt")
 cat("脚本名称: 17_cross_cycle_validation.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -812,7 +820,7 @@ cat("========================================================\n")
 # 15. 完成
 # ============================================================================
 cat("\n15. 清理临时变量...\n")
-rm(list = setdiff(ls(), c("L_DATA_DIR", "P_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("L_DATA_DIR", "P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()
 cat("\n========================================================\n")
 cat("✅ 跨Cycle验证完成！\n")

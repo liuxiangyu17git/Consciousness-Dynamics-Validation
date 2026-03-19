@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
 # ============================================================================
 # 脚本: 08_final_merge_P.R
 # 描述: NHANES 2017-2020 (P周期) 最终数据合并 - 阶段六
@@ -18,7 +21,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -31,13 +33,11 @@ for (pkg in required_packages) {
   }
 }
 # 配置路径 - P周期独立目录
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")  # P周期清洗后文件目录
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建日志目录
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("08_final_merge_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("08_final_merge_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 08_final_merge_P.R\n")
@@ -56,7 +56,7 @@ cat("\n")
 # 2. 加载master_P.rds
 # ============================================================================
 cat("1. 加载master_P.rds...\n")
-master_file <- file.path(CLEAN_DATA_DIR, "master_P.rds")
+master_file <- file.path(P_DATA_DIR, "master_P.rds")
 if(!file.exists(master_file)) {
   stop("错误: master_P.rds不存在! 请先运行02_data_merge_P.R")
 }
@@ -82,7 +82,7 @@ files_to_load <- list(
 data_list <- list()
 for(name in names(files_to_load)) {
   file_path <- files_to_load[[name]]
-  full_path <- file.path(CLEAN_DATA_DIR, file_path)
+  full_path <- file.path(P_DATA_DIR, file_path)
   if(file.exists(full_path)) {
     data_list[[name]] <- readRDS(full_path)
     cat(sprintf(" ✅ %s: %s (%d行, %d列)\n",
@@ -106,7 +106,7 @@ for(name in names(data_list)) {
     new_vars <- setdiff(names(current_data), names(final_data))
     if(length(new_vars) > 0) {
       current_data_subset <- current_data %>%
-        select(SEQN, all_of(new_vars))
+        dplyr::select(SEQN, all_of(new_vars))
       final_data <- final_data %>%
         left_join(current_data_subset, by = "SEQN")
       cat(sprintf(" ✅ 合并 %s: 新增 %d 个变量\n", name, length(new_vars)))
@@ -204,11 +204,11 @@ cat("\n")
 # ============================================================================
 cat("7. 保存文件...\n")
 # 保存完整数据集
-saveRDS(final_data, file.path(CLEAN_DATA_DIR, "final_analysis_dataset_P.rds"))
+saveRDS(final_data, file.path(P_DATA_DIR, "final_analysis_dataset_P.rds"))
 cat(" ✅ final_analysis_dataset_P.rds\n")
 # 保存分析子集
 analysis_data <- final_data %>% filter(in_analysis == 1)
-saveRDS(analysis_data, file.path(CLEAN_DATA_DIR, "analysis_dataset_subset_P.rds"))
+saveRDS(analysis_data, file.path(P_DATA_DIR, "analysis_dataset_subset_P.rds"))
 cat(" ✅ analysis_dataset_subset_P.rds\n")
 # ============================================================================
 # 9. 数据字典
@@ -220,14 +220,14 @@ data_dictionary <- data.frame(
   missing_n = sapply(final_data, function(x) sum(is.na(x))),
   missing_pct = round(sapply(final_data, function(x) mean(is.na(x)) * 100), 1)
 )
-saveRDS(data_dictionary, file.path(CLEAN_DATA_DIR, "data_dictionary_P.rds"))
-write.csv(data_dictionary, file.path(CLEAN_DATA_DIR, "data_dictionary_P.csv"), row.names = FALSE)
+saveRDS(data_dictionary, file.path(P_DATA_DIR, "data_dictionary_P.rds"))
+write.csv(data_dictionary, file.path(P_DATA_DIR, "data_dictionary_P.csv"), row.names = FALSE)
 cat(" ✅ data_dictionary_P.rds 和 data_dictionary_P.csv\n")
 # ============================================================================
 # 10. 生成合并报告
 # ============================================================================
 cat("\n9. 生成合并报告...\n")
-report_file <- file.path(LOG_DIR, "08_final_merge_report_P.txt")
+report_file <- file.path(LOGS_DIR, "08_final_merge_report_P.txt")
 sink(report_file)
 cat("P周期最终数据合并报告\n")
 cat("======================\n\n")
@@ -245,7 +245,7 @@ cat(" ✅ 合并报告已保存\n\n")
 # 11. 保存会话信息（期刊要求）
 # ============================================================================
 cat("10. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "08_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "08_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期最终合并会话信息\n")
 cat("==============================\n")
@@ -263,7 +263,7 @@ cat(" ✅ 会话信息已保存\n")
 # 12. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n11. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -271,7 +271,7 @@ code_save_path <- file.path(scripts_dir, "08_final_merge_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "08_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "08_code_list_P.txt")
 cat("脚本名称: 08_final_merge_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -282,9 +282,9 @@ cat(" ✅ 代码清单已保存\n")
 cat("\n========================================================\n")
 cat("✅ P周期最终数据合并完成！\n")
 cat("完成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
-cat("输出目录:", CLEAN_DATA_DIR, "\n")
+cat("输出目录:", P_DATA_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "LOG_DIR", "final_data", "analysis_data")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "LOGS_DIR", "final_data", "analysis_data")))
 gc()

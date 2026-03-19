@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER2_RESULTS_P_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 12_paper2_pathway_analysis_P.R
 # 描述: NHANES 2017-2020 (P周期) 论文2 - 四通路K-means聚类分析
@@ -18,7 +26,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 # 设置随机种子（期刊要求）
 set.seed(20240226)
@@ -53,15 +60,12 @@ dimension_labels <- c(
 # ============================================================================
 # 2. 配置路径 - P周期独立目录
 # ============================================================================
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")
-RESULTS_DIR <- file.path(CLEAN_DATA_DIR, "results", "paper2")
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 # 创建结果目录
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 启动日志记录（期刊要求）
-log_file <- file.path(LOG_DIR, paste0("12_paper2_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("12_paper2_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 cat("========================================================\n")
 cat("脚本: 12_paper2_pathway_analysis_P.R\n")
@@ -80,7 +84,7 @@ cat("\n")
 # 3. 数据加载
 # ============================================================================
 cat("1. 加载数据...\n")
-data_path <- file.path(CLEAN_DATA_DIR, "analysis_dataset_subset_P.rds")
+data_path <- file.path(P_DATA_DIR, "analysis_dataset_subset_P.rds")
 if(!file.exists(data_path)) {
   stop("错误: analysis_dataset_subset_P.rds不存在!")
 }
@@ -465,7 +469,7 @@ cat(" ✅ 分析数据已保存: paper2_analysis_data_P.rds\n")
 # 13. 生成分析报告
 # ============================================================================
 cat("10. 生成分析报告...\n")
-report_file <- file.path(LOG_DIR, "12_paper2_report_P.txt")
+report_file <- file.path(LOGS_DIR, "12_paper2_report_P.txt")
 sink(report_file)
 cat("Paper 2: Pathway Clustering Analysis Report (P Cycle)\n")
 cat("====================================================\n\n")
@@ -496,7 +500,7 @@ cat(" ✅ 分析报告已保存\n\n")
 # 14. 保存会话信息（期刊要求）
 # ============================================================================
 cat("11. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "12_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "12_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES Paper 2 Analysis Session Information (P Cycle)\n")
 cat("====================================================\n")
@@ -514,7 +518,7 @@ cat(" ✅ 会话信息已保存\n")
 # 15. 保存R代码副本（期刊要求）
 # ============================================================================
 cat("\n12. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -522,7 +526,7 @@ code_save_path <- file.path(scripts_dir, "12_paper2_pathway_analysis_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "12_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "12_code_list_P.txt")
 cat("脚本名称: 12_paper2_pathway_analysis_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -541,5 +545,5 @@ cat("Completion time:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()

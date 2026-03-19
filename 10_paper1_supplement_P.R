@@ -1,4 +1,12 @@
 #!/usr/bin/env Rscript
+
+source("config.R")
+
+# 设置结果保存目录
+RESULTS_DIR <- PAPER1_RESULTS_P_DIR
+if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
+
+
 # ============================================================================
 # 脚本: 10_paper1_supplement_P.R
 # 描述: NHANES 2017-2020 (P周期) 论文1补充分析
@@ -18,7 +26,6 @@
 # ============================================================================
 # 1. 环境配置
 # ============================================================================
-rm(list = ls())
 gc()
 set.seed(20240226)
 # 加载必要包
@@ -65,23 +72,20 @@ biomarker_labels <- c(
 # ============================================================================
 # 2. 配置路径 - P周期独立目录
 # ============================================================================
-PROJECT_ROOT <- "C:/NHANES_Data"
-CLEAN_DATA_DIR <- file.path(PROJECT_ROOT, "2017-2020")
-RESULTS_DIR <- file.path(CLEAN_DATA_DIR, "results")
-LOG_DIR <- file.path(CLEAN_DATA_DIR, "logs")
+PROJECT_ROOT <- PROJECT_ROOT
 if (!dir.exists(RESULTS_DIR)) dir.create(RESULTS_DIR, recursive = TRUE)
-if (!dir.exists(LOG_DIR)) dir.create(LOG_DIR, recursive = TRUE)
+if (!dir.exists(LOGS_DIR)) dir.create(LOGS_DIR, recursive = TRUE)
 # 日志
-log_file <- file.path(LOG_DIR, paste0("10_paper1_supp_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
+log_file <- file.path(LOGS_DIR, paste0("10_paper1_supp_P_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".log"))
 sink(log_file, split = TRUE)
 # ============================================================================
 # 3. 加载数据
 # ============================================================================
 cat("1. 加载数据...\n")
-df <- readRDS(file.path(CLEAN_DATA_DIR, "final_analysis_dataset_P.rds"))
+df <- readRDS(file.path(P_DATA_DIR, "final_analysis_dataset_P.rds"))
 df <- df %>% filter(in_analysis == 1)
 # 加载健康行为变量
-health <- readRDS(file.path(CLEAN_DATA_DIR, "healthbehavior_vars_P.rds"))
+health <- readRDS(file.path(P_DATA_DIR, "healthbehavior_vars_P.rds"))
 # 使用 match() 直接赋值
 df$pa_meets_guideline <- health$pa_meets_guideline[match(df$SEQN, health$SEQN)]
 df$sleep_adequate <- health$sleep_adequate[match(df$SEQN, health$SEQN)]
@@ -351,7 +355,7 @@ if(nrow(clinical_results) > 0) {
 cat("\n========================================================\n")
 cat("9. 生成补充分析报告\n")
 cat("========================================================\n")
-report_file <- file.path(LOG_DIR, "10_paper1_supp_report_P.txt")
+report_file <- file.path(LOGS_DIR, "10_paper1_supp_report_P.txt")
 sink(report_file)
 cat("论文1补充分析报告 (P周期)\n")
 cat("==========================\n\n")
@@ -377,7 +381,7 @@ cat("\n ✅ 补充分析报告已保存\n\n")
 # 10. 保存会话信息
 # ============================================================================
 cat("10. 保存会话信息...\n")
-session_info_path <- file.path(LOG_DIR, "10_session_info_P.txt")
+session_info_path <- file.path(LOGS_DIR, "10_session_info_P.txt")
 sink(session_info_path)
 cat("NHANES P周期论文1补充分析会话信息\n")
 cat("==================================\n")
@@ -395,7 +399,7 @@ cat(" ✅ 会话信息已保存\n")
 # 11. 保存R代码副本
 # ============================================================================
 cat("\n11. 保存R代码副本...\n")
-scripts_dir <- file.path("C:/NHANES_Data", "scripts")
+scripts_dir <- file.path(PROJECT_ROOT, "scripts")
 if (!dir.exists(scripts_dir)) {
   dir.create(scripts_dir, recursive = TRUE)
 }
@@ -403,7 +407,7 @@ code_save_path <- file.path(scripts_dir, "10_paper1_supplement_P.R")
 cat("\n⚠️  请手动将当前脚本保存到以下位置：\n")
 cat(sprintf("   %s\n\n", code_save_path))
 cat("   这是JAMA Psychiatry的明确要求：所有分析代码必须保存并公开。\n")
-code_list_path <- file.path(LOG_DIR, "10_code_list_P.txt")
+code_list_path <- file.path(LOGS_DIR, "10_code_list_P.txt")
 cat("脚本名称: 10_paper1_supplement_P.R\n", file = code_list_path)
 cat("生成时间:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = code_list_path, append = TRUE)
 cat("建议保存位置:", code_save_path, "\n", file = code_list_path, append = TRUE)
@@ -418,5 +422,5 @@ cat("结果已保存至:", RESULTS_DIR, "\n")
 cat("========================================================\n")
 sink()
 # 清理临时变量
-rm(list = setdiff(ls(), c("CLEAN_DATA_DIR", "RESULTS_DIR", "LOG_DIR")))
+rm(list = setdiff(ls(), c("P_DATA_DIR", "RESULTS_DIR", "LOGS_DIR")))
 gc()
