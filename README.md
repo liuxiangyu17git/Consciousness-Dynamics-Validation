@@ -181,8 +181,8 @@ All outputs are saved in:
 
 ## 🔗 Quick Links
 
-- 📦 [GitHub Repository](https://github.com/liuxiangyu17git/HCF-4--analysis-review/)
-- 📋 [OSF Preregistration](https://osf.io/ap58t)
+- 📦 [GitHub Repository](https://github.com/liuxiangyu17git/Consciousness-Dynamics-Validation)
+- 📋 [OSF Preregistration](https://osf.io/ap58t/overview?view_only=1edfed21b8874a249f592cbf691bdfc3)
 
 ---
 
