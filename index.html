@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consciousness Dynamics: A Computable Framework Identifies α₂ as a Transdiagnostic Protective Target</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #24292f;
+        }
+        h1 { color: #0969da; border-bottom: 1px solid #d0d7de; padding-bottom: 0.3em; }
+        h2 { color: #0969da; margin-top: 1.5em; border-bottom: 1px solid #d0d7de; padding-bottom: 0.2em; }
+        h3 { margin-top: 1em; }
+        a { color: #0969da; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { background: #f6f8fa; padding: 0.2em 0.4em; border-radius: 6px; font-family: monospace; }
+        pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 14px; }
+        .key-findings { background: #f6f8fa; padding: 16px; border-radius: 6px; margin: 20px 0; }
+        .key-findings ul { margin: 0; padding-left: 20px; }
+        hr { border: 0; border-top: 1px solid #d0d7de; margin: 24px 0; }
+        .note { background: #fff8c5; border-left: 4px solid #f1c40f; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+        footer { color: #57606a; font-size: 0.9em; text-align: center; margin-top: 40px; border-top: 1px solid #d0d7de; padding-top: 20px; }
+        .file-tree { font-family: monospace; background: #f6f8fa; padding: 16px; border-radius: 6px; font-size: 13px; line-height: 1.5; white-space: pre; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Consciousness Dynamics: A Computable Framework Identifies α₂ as a Transdiagnostic Protective Target</h1>
+
+    <p><strong>Analysis code for the HCF-4α framework validation study using NHANES data (2017-2023).</strong></p>
+
+    <h2>📌 For Peer Review</h2>
+    <p>This repository contains all analysis scripts for the manuscript <strong>"Consciousness Dynamics: A Computable Framework Identifies α₂ as a Transdiagnostic Protective Target"</strong>.</p>
+
+    <h2>📁 Repository Structure</h2>
+
+    <div class="file-tree">
+NHANES-HCF-4alpha/
+├── 01_data_cleaning_L.R
+├── 01_data_cleaning_P.R
+├── 02_data_merge_L.R
+├── 02_data_merge_P.R
+├── 03_variable_basic_L.R
+├── 03_variable_basic_P.R
+├── 04_variable_biomarker_L.R
+├── 04_variable_biomarker_P.R
+├── 08_final_merge_L.R
+├── 08_final_merge_P.R
+├── 09_paper1_HCF_analysis_L.R
+├── 09_paper1_HCF_analysis_P.R
+├── 10_paper1_supplement_L.R
+├── 10_paper1_supplement_P.R
+├── 11_paper1_deep_analysis_L.R
+├── 11_paper1_deep_analysis_P.R
+├── 12_paper2_pathway_analysis_L.R
+├── 12_paper2_pathway_analysis_P.R
+├── 13_paper2_supplement_L.R
+├── 13_paper2_supplement_P.R
+├── 14_paper2_deep_analysis_L.R
+├── 14_paper2_deep_analysis_P.R
+├── 15_paper2_deep_analysis_continued_L.R
+├── 15_paper2_deep_analysis_continued_P.R
+├── 16_paper3_alpha_analysis_L.R
+├── 16_paper3_alpha_analysis_P.R
+├── 17_cross_cycle_validation_PL.R
+├── 18_longitudinal_analysis_PL.R
+├── 19_supplement_analysis_PL.R
+├── 20_sensitivity_analysis_PL.R
+├── 21_serious_research.R
+├── 22_sensitivity_imputation.R
+├── run_all.R
+├── config.R
+├── README.md
+│
+├── data/
+│   ├── raw/                # ⚠️ User must place NHANES XPT files here
+│   └── processed/           # ✅ Pre-computed RDS files (05-07 outputs)
+│       ├── L_cycle/         # 2021-2023 cycle
+│       │   ├── alpha_factors.rds
+│       │   ├── HCF_typing.rds
+│       │   ├── pathway_clustering_results.rds
+│       │   ├── pathway_final_with_clusters.rds
+│       │   ├── master.rds
+│       │   ├── analysis_dataset_subset.rds
+│       │   └── final_analysis_dataset.rds
+│       └── P_cycle/         # 2017-2020 cycle
+│           ├── alpha_factors_P.rds
+│           ├── HCF_typing_P.rds
+│           ├── pathway_clustering_results_P.rds
+│           ├── pathway_final_with_clusters_P.rds
+│           ├── master_P.rds
+│           ├── analysis_dataset_subset_P.rds
+│           └── final_analysis_dataset_P.rds
+│
+└── outputs/                 # Generated after running (not in repo)
+    ├── logs/
+    ├── results/
+    └── figures/
+    </div>
+
+    <div class="note">
+        <strong>⚠️ Important Note About Scripts 05-07</strong><br>
+        Scripts 05, 06, 07 are <strong>NOT included</strong> in this repository due to commercial patent considerations.<br>
+        However, <strong>their outputs are provided</strong> as RDS files in <code>data/processed/</code>:
+        <ul>
+            <li><code>alpha_factors_*.rds</code> (from script 05)</li>
+            <li><code>HCF_typing_*.rds</code> (from script 06)</li>
+            <li><code>pathway_*_*.rds</code> (from script 07)</li>
+        </ul>
+        This allows full reproduction of scripts 08-22 without needing the original code.
+    </div>
+
+    <h2>🚀 How to Reproduce All Results</h2>
+
+    <h3>1. Prerequisites</h3>
+    <p>Install required R packages:</p>
+    <pre>packages <- c(
+  "tidyverse", "survey", "lavaan", "semTools", "psych",
+  "ggplot2", "pheatmap", "pROC", "gridExtra", "emmeans",
+  "jtools", "interactions", "corrplot", "irr", "rpart",
+  "MatchIt", "WeightIt", "cluster", "splines", "rms",
+  "poLCA", "flexmix", "lmtest", "sandwich", "gtools",
+  "reshape2", "cobalt", "cocor", "lme4", "tableone",
+  "partykit", "forestplot", "kableExtra", "knitr"
+)
+
+install.packages(packages)</pre>
+
+    <h3>2. Prepare NHANES Raw Data</h3>
+    <p>Download XPT files from:</p>
+    <ul>
+        <li><a href="https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2021">NHANES 2021-2023 (L cycle)</a></li>
+        <li><a href="https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?BeginYear=2017">NHANES 2017-2020 (P cycle)</a></li>
+    </ul>
+    <p>Place all 40 XPT files in <code>data/raw/</code>:</p>
+    <pre>data/raw/
+├── DEMO_L.xpt
+├── DPQ_L.xpt
+├── ... (20 L cycle files)
+├── P_DEMO.xpt
+├── P_DPQ.xpt
+└── ... (20 P cycle files)</pre>
+
+    <h3>3. One-Click Run</h3>
+    <pre># In R, simply run:
+source("run_all.R")</pre>
+    <p>This will sequentially execute all scripts 01-22 and generate all results.</p>
+
+    <h3>4. View Results</h3>
+    <p>All outputs are saved in:</p>
+    <ul>
+        <li><code>outputs/results/</code> - Tables and analysis results</li>
+        <li><code>outputs/figures/</code> - Generated figures (PDF/PNG)</li>
+        <li><code>outputs/logs/</code> - Detailed execution logs</li>
+    </ul>
+
+    <h2>📋 Script Overview</h2>
+    <table style="width:100%; border-collapse: collapse;">
+        <tr style="background:#f6f8fa;"><th style="border:1px solid #d0d7de; padding:8px;">Scripts</th><th style="border:1px solid #d0d7de; padding:8px;">Description</th></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">01-04</td><td style="border:1px solid #d0d7de; padding:8px;">Data cleaning and preparation (requires XPT files)</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">05-07</td><td style="border:1px solid #d0d7de; padding:8px;">⚠️ <strong>Not included</strong> (commercial) - outputs provided as RDS</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">08</td><td style="border:1px solid #d0d7de; padding:8px;">Final data merging</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">09-11</td><td style="border:1px solid #d0d7de; padding:8px;">Paper 1: HCF typology analyses</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">12-15</td><td style="border:1px solid #d0d7de; padding:8px;">Paper 2: Pathway clustering and alpha factors</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">16</td><td style="border:1px solid #d0d7de; padding:8px;">Paper 3: Alpha factor validation</td></tr>
+        <tr><td style="border:1px solid #d0d7de; padding:8px;">17-22</td><td style="border:1px solid #d0d7de; padding:8px;">Cross-cycle validation, sensitivity analyses</td></tr>
+    </table>
+
+    <h2>📊 Key Findings</h2>
+    <div class="key-findings">
+        <ul>
+            <li><strong>α₂ identified as transdiagnostic protective factor</strong><br>
+                ORs: 0.39–0.82 for depression, CVD, and diabetes<br>
+                Protective threshold: α₂ > -0.5<br>
+                Number Needed to Treat (NNT): <strong>21</strong> in general population, <strong>4</strong> in high-risk subgroup</li>
+            <li><strong>Perseveration Paradox</strong><br>
+                Highest depression (PHQ-9 = 11.3) with lowest inflammation (CRP = 3.3 mg/L)</li>
+            <li><strong>Compression Hypothesis</strong><br>
+                Fatigue ↑ 1.10, Suicidal ideation ↓ 0.40 — population-level evidence for α₁ awakening</li>
+            <li><strong>Incremental Value</strong><br>
+                Alpha factors explain <strong>+9.4% variance</strong>, <strong>4× physiological measures</strong> (BMI, CRP, heart rate)</li>
+            <li><strong>Cross-Cycle Replicability</strong><br>
+                All core findings replicated across two independent NHANES cycles (2017–2020 and 2021–2023)</li>
+        </ul>
+    </div>
+
+    <h2>🔗 Quick Links</h2>
+    <ul>
+        <li>📦 <a href="https://github.com/liuxiangyu17git/HCF-4--analysis-review/">GitHub Repository</a></li>
+        <li>📋 <a href="https://osf.io/ap58t">OSF Preregistration</a></li>
+    </ul>
+
+    <hr>
+
+    <footer>
+        <p>MIT License — see <a href="LICENSE">LICENSE</a> file for details.</p>
+        <p>Xiangyu Liu · Independent Scholar<br>
+        Email: liuxiangyu@liuxiangyu.com.cn · ORCID: 0009-0004-5650-7780</p>
+    </footer>
+</body>
+</html>
